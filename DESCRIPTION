@@ -1,0 +1,13 @@
+Package: SIS
+Version: 0.1
+Date: 2009-08-10
+Title: Sure Independent Screening
+Author: Jianqing Fan, Yang Feng, Richard Samworth, Yichao Wu
+Maintainer: Yang Feng <yangfeng@princeton.edu>
+Depends: survival, R (>= 2.0)
+Description: (Iterative) Sure Independent Screening for Generalized
+        Linear Models and Cox's Proportional Hazard's Models
+License: GPL-2
+Packaged: 2009-08-13 15:45:41 UTC; yangfeng
+Repository: CRAN
+Date/Publication: 2009-08-14 20:24:07
