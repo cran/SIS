@@ -8,9 +8,8 @@ inittype='NoPen', tune.method='BIC', folds=NULL, post.tune.method='CV',post.tune
         stop('The number of components of the dataset is not correct')
      if(is.null(family))
         family=gaussian()
-     if(family$family == "binomial" & (is.null(xtune) | is.null(ytune))) 
-        stop("Independent tuning data required for logit link.")
-
+    # if(family$family == "binomial" & (is.null(xtune) | is.null(ytune))) 
+    #    stop("Independent tuning data required for logit link.")
      x=data[[1]]
      y=data[[2]]
      }
@@ -26,10 +25,11 @@ inittype='NoPen', tune.method='BIC', folds=NULL, post.tune.method='CV',post.tune
       }
        
     n = nrow(x)
+    p = ncol(x)
     if (is.null(nsis)) {
         if (vartype == 1) 
-            nsis = floor(n/log(n))
-        else nsis = floor(n/4/log(n))
+            nsis = floor(min(p,n/log(n)))
+        else nsis = floor(min(p,n/4/log(n)))
     }
     if (is.null(post.tune.folds) & post.tune.method == "CV") {
         temp = sample(1:n, n, replace = FALSE)
@@ -58,7 +58,7 @@ inittype='NoPen', tune.method='BIC', folds=NULL, post.tune.method='CV',post.tune
                 tune.method = tune.method, ISIStypeCumulative = ISIStypeCumulative, 
                 DOISIS = DOISIS, maxloop = maxloop)
         }
-        if (family$family == "binomial") {
+        if (family$family == "binomial" & !(is.null(xtune) | is.null(ytune))) {
             SIScoef = (INDEPgetfinalSCADcoef(x = x, y = y, 
                 pickind = SISresult$SISind, xtune = xtune, ytune = ytune, 
                 family = family, inittype = inittype))

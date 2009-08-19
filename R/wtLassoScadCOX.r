@@ -45,7 +45,7 @@ getfinalSCADcoefCOX <- function (x, time, status, method = "efron", pickind, fol
     tempdev <- NULL
     tempcoef <- NULL
     if (is.null(nsis)) 
-        nsis = floor(fn/log(fn)/4)
+        nsis = floor(min(fp,fn/log(fn)/4))
     for (i in 1:fp) {
         cox.fit <- coxph(Surv(time, status) ~ x[, i])
         tempdev[i] <- -cox.fit$loglik[2]
@@ -189,8 +189,8 @@ COXvarISISscad <- function(x, time, status,  method = "efron", nsis=NULL, folds=
     fn = nrow(x)
     if (is.null(nsis)) {
         if (vartype == "First") 
-            nsis = floor(fn/log(fn))
-        else nsis = floor(fn/log(fn)/4)
+            nsis = floor(min(fp,fn/log(fn)))
+        else nsis = floor(min(fp,fn/log(fn)/4))
     }
     allind = seq(1, fp, 1)
     fn.half = floor(fn/2)

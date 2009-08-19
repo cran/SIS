@@ -144,7 +144,8 @@ return(list(wt.initsoln=wt.initsoln, tuneer=tuneer, best.lambda.ind=best.lambda.
 ############################################################################################################################################################
 AICBICscadglm <- function(x, y, wt.initsoln=wt.initsoln, dlambda=NULL, maxlambda=NULL, 
    family=family, AICBIC='AIC', weight=NULL, offset=NULL, nopenalty.subset=NULL,  eps0=1e-3) {
-   x=as.matrix(x)
+
+x=as.matrix(x)
 if(is.null(offset)) offset=rep(0, nrow(x))
 if(is.null(weight)) weight=rep(1, nrow(x))
 if(is.null(maxlambda)) maxlambda=findSCADMaxLambda(x, y, wt.initsoln=wt.initsoln, family=family)
@@ -198,6 +199,7 @@ return(wnew)
 "scadglm" <- function(x, y, wt.initsoln=NULL, lambda, initsoln=NULL, family = binomial(), 
    weight = NULL, offset = NULL, function.precision=1e-8, nopenalty.subset=NULL) {
 
+   x=as.matrix(x)
   if(is.null(offset)) offset=rep(0, nrow(x))
   if(is.null(weight)) weight=rep(1, nrow(x))
   
@@ -411,7 +413,7 @@ if((inittype!='NoPen')&&(inittype!='L1')) stop("inittype must be either 'NoPen' 
   x=as.matrix(x)
   fp=ncol(x)
   fn=nrow(x)
-  if(is.null(nsis)) nsis=floor(fn/log(fn)/4)
+  if(is.null(nsis)) nsis=floor(min(fp,fn/log(fn)/4))
   ones=rep(1, fn)
   tempdev0=NULL
   tempmycoef=NULL
@@ -530,7 +532,7 @@ x=as.matrix(x)
 fp=ncol(x)
 fn=nrow(x)
 if(is.null(nsis)){
-    if(vartype=='First') nsis=floor(fn/log(fn)) else nsis=floor(fn/log(fn)/4)
+    if(vartype=='First') nsis=floor(min(fp,fn/log(fn))) else nsis=floor(min(fp,fn/log(fn)/4))
 }
 ones=rep(1, fn)
 allind=seq(1, fp, 1)
