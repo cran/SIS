@@ -92,3 +92,4 @@ ISIScoef = INDEPgetfinalSCADcoef(x = x, y = y,
                 family = binomial())
 }
 
+\keyword{file}

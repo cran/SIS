@@ -141,4 +141,5 @@ cox.result3=SIS(data=list(x=x,time=time,status=status), model='cox', vartype=2)
 
 
 }
+\keyword{file}
 

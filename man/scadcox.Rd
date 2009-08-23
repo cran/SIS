@@ -104,3 +104,4 @@ w2 <- coxph(Surv(time,status)~x[,1:100])$coef
 
 }
 
+\keyword{file}

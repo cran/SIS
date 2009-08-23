@@ -94,3 +94,4 @@ wtlassoglm(x,y,lassoweight)$w
 coef(glm(y~x,family=binomial()))
 }
 
+\keyword{file}

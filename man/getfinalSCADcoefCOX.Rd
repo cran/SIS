@@ -90,3 +90,4 @@ SIScoef <- getfinalSCADcoefCOX(x = x, time = time, status = status,
             pickind = 1:5)
 }
 
+\keyword{file}

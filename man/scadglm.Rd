@@ -85,3 +85,4 @@ y=rbinom(n, 1, fprob)
 scadglm(x,y,lambda=0.0015)
 coef(glm(y~x,family=binomial()))
 }
+\keyword{file}
