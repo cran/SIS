@@ -9,11 +9,11 @@
  This function gets the final regression coefficients for the SCAD regularized loglikelihood for generalized linear models after applying (I)SIS.
   }
 \usage{
-getfinalSCADcoef(x, y, pickind, folds=NULL, eps0=1e-3, family=binomial(), 
+getfinalSCADcoef(x, y, pickind, folds=NULL, eps0=1e-5, family=binomial(),
 tune.method="AIC", inittype='NoPen', detailed=FALSE)
 
 INDEPgetfinalSCADcoef(x, y, pickind,  folds=NULL, xtune, ytune, 
-family=binomial(), inittype='NoPen', eps0=1e-3, detailed=FALSE) 
+family=binomial(), inittype='NoPen', eps0=1e-5, detailed=FALSE)
 
 }
 \arguments{

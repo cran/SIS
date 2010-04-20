@@ -1,5 +1,5 @@
 getfinalSCADcoefCOX <- function (x, time, status, method = "efron", pickind, folds = NULL, 
-    eps0 = 1e-3, tune.method = "AIC", inittype = "NoPen", detailed = FALSE) 
+    eps0 = 1e-5, tune.method = "AIC", inittype = "NoPen", detailed = FALSE)
 {
     p = ncol(x)
     n = nrow(x)
@@ -23,7 +23,7 @@ getfinalSCADcoefCOX <- function (x, time, status, method = "efron", pickind, fol
         weight = NULL, offset = NULL, nopenalty.subset = NULL, 
         eps0 = eps0))
     tempw = SCADresult$w
-    tempw[abs(tempw) < eps0] = 0
+    tempw[abs(tempw) < eps0 * max(abs(tempw))] = 0
     SCADcoef = rep(0, p)
     SCADcoef[pickind] = tempw
     if (detailed) {
@@ -39,7 +39,7 @@ getfinalSCADcoefCOX <- function (x, time, status, method = "efron", pickind, fol
 
 ########################################################################################
  "COXvanISISscad" <- function(x, time, status,  method = "efron", nsis=NULL, folds=NULL, rank.method="obj", 
- eps0=1e-3, inittype='NoPen', tune.method="AIC", ISIStypeCumulative=FALSE, DOISIS=TRUE, maxloop=5) {
+ eps0=1e-5, inittype='NoPen', tune.method="AIC", ISIStypeCumulative=FALSE, DOISIS=TRUE, maxloop=5) {
     fn <- nrow(x)
     fp <- ncol(x)
     tempdev <- NULL
@@ -89,7 +89,7 @@ getfinalSCADcoefCOX <- function (x, time, status, method = "efron", pickind, fol
         weight = NULL, offset = NULL, nopenalty.subset = NULL, 
         eps0 = eps0))
     current.coef = SCAD.result$w
-    non.zero.ind = which(abs(current.coef) > eps0)
+    non.zero.ind = which(abs(current.coef) > eps0 * max(abs(current.coef)))
     ISISind = sort(pick.ind[non.zero.ind])
     test = if (length(ISISind) < nsis) 
         1
@@ -158,7 +158,7 @@ getfinalSCADcoefCOX <- function (x, time, status, method = "efron", pickind, fol
                 AICBIC = "BIC", weight = NULL, offset = NULL, 
                 nopenalty.subset = NULL, eps0 = eps0))
         cur.coef = SCAD.result$w
-        nonzeroindc = which(abs(cur.coef) > eps0)
+        nonzeroindc = which(abs(cur.coef) > eps0 * max(abs(cur.coef)))
         ISISind = sort(pick.ind[nonzeroindc])
         curloop = curloop + 1
         detail.pickind[[curloop]] = pick.ind
@@ -181,7 +181,7 @@ getfinalSCADcoefCOX <- function (x, time, status, method = "efron", pickind, fol
  
  
 COXvarISISscad <- function(x, time, status,  method = "efron", nsis=NULL, folds=NULL, rank.method="obj", 
- eps0=1e-3, inittype='NoPen', tune.method="AIC", vartype="First",  ISIStypeCumulative=FALSE, DOISIS=TRUE, maxloop=5) {
+ eps0=1e-5, inittype='NoPen', tune.method="AIC", vartype="First",  ISIStypeCumulative=FALSE, DOISIS=TRUE, maxloop=5) {
     if ((inittype != "NoPen") && (inittype != "L1")) 
         stop("wrong inittype")
     x = as.matrix(x)
@@ -224,6 +224,7 @@ COXvarISISscad <- function(x, time, status,  method = "efron", nsis=NULL, folds=
     tempdev02.sort = sort(used.dev2, method = "sh", index = TRUE)
     initRANKorder2 = tempdev02.sort$ix
     old.initRANKorder2 = initRANKorder2
+    
     firstn = nsis
     pickindall = intersect(tempdev01.sort$ix[1:firstn], tempdev02.sort$ix[1:firstn])
     if (vartype == "Second") {
@@ -276,7 +277,7 @@ COXvarISISscad <- function(x, time, status,  method = "efron", nsis=NULL, folds=
         method = method, AICBIC = "BIC", weight = NULL, offset = NULL, 
         nopenalty.subset = NULL, eps0 = eps0))
     cur.coef = SCAD.result$w
-    nonzeroindc = which(abs(cur.coef) > eps0)
+    nonzeroindc = which(abs(cur.coef) > eps0 * max(abs(cur.coef)))
     ISISind = sort(pickindall[nonzeroindc])
     test = if (length(ISISind) < nsis) 
         1
@@ -371,7 +372,7 @@ COXvarISISscad <- function(x, time, status,  method = "efron", nsis=NULL, folds=
             AICBIC = "BIC", weight = NULL, offset = NULL, nopenalty.subset = nopenalty.subset, 
             eps0 = eps0))
         cur.coef = SCAD.result$w
-        nonzeroindc = which(abs(cur.coef) > eps0)
+        nonzeroindc = which(abs(cur.coef) > eps0 * max(abs(cur.coef)))
         ISISind = sort(pickindall[nonzeroindc])
         curloop = curloop + 1
         detail.pickind[[curloop]] = pickindall
@@ -399,7 +400,7 @@ COXvarISISscad <- function(x, time, status,  method = "efron", nsis=NULL, folds=
 "CVscadcox" <- function(x, time, status, 
 wt.initsoln=NULL, folds=NULL, dlambda=NULL, 
 method = "efron", lambda2=0,weight=NULL, offset=NULL, 
-nopenalty.subset=NULL,eps0=1e-16) { 
+nopenalty.subset=NULL, eps0=1e-5) {
 x=as.matrix(x) 
 p=ncol(x)
 n=nrow(x) 
@@ -475,7 +476,7 @@ return(list(wt.initsoln=wt.initsoln, tuneer=tuneer, best.lambda.ind=best.lambda.
 "CVlassocox" <- function(x, time, status, 
 wt.initsoln=NULL, folds=NULL, dlambda=NULL, 
 method = "efron", lambda2=0,weight=NULL, offset=NULL, 
-nopenalty.subset=NULL,eps0=1e-16) { 
+nopenalty.subset=NULL) {
 x=as.matrix(x) 
 n=nrow(x) 
 p=ncol(x)
@@ -531,8 +532,6 @@ old.soln.save[[iloop]]=old.soln[[1]]
 temp.initsoln=wt.initsoln
 
 for (iloop in 2:length(lambda.cand)) {
-  print(iloop)
-  print(sum(abs(old.soln.save[[iloop-1]])>1e-3))
   #if((max(abs(temp.initsoln))>0) && (min(abs(temp.initsoln[abs(temp.initsoln)>0]))>3.7*lambda.cand[iloop-1])) break
   tuneer[iloop]=0
   for (j in 1:n.folds) {
@@ -578,12 +577,12 @@ tuneer=NULL
 iloop=1
 
 old.soln[[iloop]]=scadcox(x, time, status, method, wt.initsoln=wt.initsoln, lambda=lambda.cand[iloop], initsoln=NULL, weight = weight, lambda2, nopenalty.subset=nopenalty.subset)
-tuneer[iloop]=length(which(abs(old.soln[[iloop]])>eps0))*AB.factor-logplik(x, time, status,   old.soln[[iloop]], method)
+tuneer[iloop]=length(which(abs(old.soln[[iloop]])>eps0* max(abs(old.soln[[iloop]]))))*AB.factor-logplik(x, time, status,   old.soln[[iloop]], method)
 
 
 for (iloop in 2:length(lambda.cand)) {
 old.soln[[iloop]]=scadcox(x, time, status,  method, wt.initsoln=wt.initsoln, lambda=lambda.cand[iloop], initsoln=old.soln[[iloop-1]], weight = weight, lambda2, nopenalty.subset=nopenalty.subset)
-tuneer[iloop]=length(which(abs(old.soln[[iloop]])>eps0))*AB.factor-logplik(x, time, status, old.soln[[iloop]], method)
+tuneer[iloop]=length(which(abs(old.soln[[iloop]])>eps0 * max(abs(old.soln[[iloop]]))))*AB.factor-logplik(x, time, status, old.soln[[iloop]], method)
 }
 
 best.lambda.ind=which.min(tuneer) # note: this selection of tuning parameter may not be very good, an alternative one is given below
@@ -594,7 +593,7 @@ return(list(wt.initsoln=wt.initsoln, tuneer=tuneer, best.lambda.ind=best.lambda.
   
 ##############################################################################
 "scadcox" <- function(x, time, status, method="efron", wt.initsoln=NULL, lambda, 
-    initsoln=NULL, weight = NULL, function.precision=1e-8, nopenalty.subset=NULL){
+    initsoln=NULL, weight = NULL, function.precision=1e-10, nopenalty.subset=NULL){
     x = as.matrix(x)
     if (is.null(weight)) 
         weight = rep(1, nrow(x))
@@ -611,9 +610,9 @@ return(list(wt.initsoln=wt.initsoln, tuneer=tuneer, best.lambda.ind=best.lambda.
 
 ##############################################################################
 "fullscadcox" <- function(x, time, status, method="efron", lambda, 
-    initsoln=NULL, weight = NULL, function.precision=1e-8, nopenalty.subset=NULL, eps0=1e-6){
+    initsoln=NULL, weight = NULL, function.precision=1e-10, nopenalty.subset=NULL, eps0=1e-5, maxloop=10){
 
- x = as.matrix(x)
+    x = as.matrix(x)
     if (is.null(weight)) 
         weight = rep(1, nrow(x))
     if (is.null(initsoln)) 
@@ -622,12 +621,14 @@ return(list(wt.initsoln=wt.initsoln, tuneer=tuneer, best.lambda.ind=best.lambda.
     p <- ncol(x)
     wold = initsoln
     test = 1
-    while (test) {
+    loop = 1
+    while (test & loop>maxloop) {
+        loop = loop + 1
         lasso.weight <- n * scadderiv(abs(wold), 3.7, lambda)
         lasso.weight[nopenalty.subset] <- 0
         wnew = wtlassocox(x, time, status, method, lasso.weight, 
             initsoln, weight, lambda2 = 0, function.precision)$w
-        if (sum((wold - wnew)^2) < eps0) 
+        if (sum((wold - wnew)^2) < eps0*max(abs(wold)))
             test = 0
         wold = wnew
     }
@@ -748,7 +749,7 @@ getRept <- function(time,status){
 
 
 ##############################################################################
-"wtlassocox" <- function(x, time, status, method="efron", lassoweight=NULL, initsoln=NULL,  weight = NULL, lambda2=0, function.precision=1e-8) {
+"wtlassocox" <- function(x, time, status, method="efron", lassoweight=NULL, initsoln=NULL,  weight = NULL, lambda2=0, function.precision=1e-10) {
 
     call <- match.call()
     x = as.matrix(x)

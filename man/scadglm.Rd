@@ -12,11 +12,11 @@ These functions solve SCAD regularized loglikelihood for generalized linear mode
 \usage{
 scadglm(x, y, wt.initsoln=NULL, lambda, initsoln=NULL, 
 family = binomial(), weight = NULL, offset = NULL, 
-function.precision=1e-8, nopenalty.subset=NULL)
+function.precision=1e-10, nopenalty.subset=NULL)
        
 fullscadglm(x, y, lambda, initsoln=NULL, family = binomial(),
-   weight = NULL, offset = NULL, function.precision=1e-8, 
-   nopenalty.subset=NULL, eps0=1e-6)
+   weight = NULL, offset = NULL, function.precision=1e-10,
+   nopenalty.subset=NULL, eps0=1e-5, maxloop=10)
 
 }
 \arguments{
@@ -46,14 +46,17 @@ fullscadglm(x, y, lambda, initsoln=NULL, family = binomial(),
    }
   \item{function.precision}{
     \code{function.precision} parameter used in the internal
-    solver. Default is \code{1e-8.}
+    solver. Default is \code{1e-10.}
   }
   \item{nopenalty.subset}{
     a set of indices for the predictors that are not subject to the L1
     penalty.
   }
   \item{eps0}{
-      an effective zero.
+    an effective zero.
+  }
+  \item{maxloop}{
+    the maximum number of loops for the SCAD iteration.
   }
 }
 \value{  They return a (p+1) vector of estimated coefficients.

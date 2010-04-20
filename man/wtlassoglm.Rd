@@ -8,7 +8,7 @@
 }
 \usage{
 wtlassoglm(x, y, lassoweight=NULL, initsoln=NULL,   family = binomial(), 
-weight = NULL, offset = NULL, lambda2=0, function.precision=1e-8)
+weight = NULL, offset = NULL, lambda2=0, function.precision=1e-10)
 }
 \arguments{
   \item{x}{
@@ -39,7 +39,7 @@ weight = NULL, offset = NULL, lambda2=0, function.precision=1e-8)
   }
   \item{function.precision}{
     \code{function.precision} parameter used in the internal
-    solver. Default is \code{1e-8.}
+    solver. Default is \code{1e-10.}
   }
 }
 \value{

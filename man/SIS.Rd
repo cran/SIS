@@ -10,7 +10,7 @@
  }
 \usage{
 SIS(data=NULL, model='glm', family=NULL, method='efron', vartype=0, nsis=NULL, 
-rank.method='obj', eps0=1e-3, inittype='NoPen', tune.method='BIC', folds=NULL, 
+rank.method='obj', eps0=1e-5, inittype='NoPen', tune.method='BIC', folds=NULL,
 post.tune.method='CV',post.tune.folds=NULL, DOISIS=TRUE, 
 ISIStypeCumulative=FALSE, maxloop=5, xtune=NULL, ytune=NULL, detail=FALSE)
 }
@@ -38,7 +38,7 @@ ISIStypeCumulative=FALSE, maxloop=5, xtune=NULL, ytune=NULL, detail=FALSE)
      the criterion for ranking predictor variables in (I)SIS. It can be either \code{obj} or \code{coeff}.
   }
   \item{eps0}{
-      an effecitve zero.
+      an effective zero relative to the scale of the maximum absolute marginal regression coefficients.
   }
   \item{inittype}{
       \code{inittype} specifies the type of initial solution for the one-step SCAD. It can be either \code{NoPen} or \code{L1}.
@@ -59,7 +59,7 @@ ISIStypeCumulative=FALSE, maxloop=5, xtune=NULL, ytune=NULL, detail=FALSE)
    \code{DOISIS} specifies whether to do iterative SIS.
    }
   \item{ISIStypeCumulative}{
-   \code{ISIStypeCumulative} specifies whether to allow variable deletion in each step of ISIS. (\code{ISIStypeCumulative}= FALSE allows variable deletion)
+   \code{ISIStypeCumulative} specifies whether to penalize variables selected by the previous step of the ISIS iteration in the following SCAD step. (\code{ISIStypeCumulative}= FALSE put penalties on all variables. In this case, the procedure is more likely to delete variables from previous step. )
    }
    \item{maxloop}{
    maximum number of loops in iterative SIS.
@@ -76,10 +76,13 @@ ISIStypeCumulative=FALSE, maxloop=5, xtune=NULL, ytune=NULL, detail=FALSE)
     the vector of indices selected by SIS.
     }   
     \item{ISISind}{
-     the vector of indices selected by ISIS.
+    the vector of indices selected by ISIS.
      } 
     \item{SIScoef}{
-    a vector of final solution.
+    the vector of solution by SIS followed by SCAD.
+    }
+    \item{ISIScoef}{
+    the vector of solution by ISIS.
     }
 }
 \references{

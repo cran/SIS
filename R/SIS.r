@@ -1,4 +1,4 @@
-SIS <- function(data=NULL, model='glm', family=NULL, method='efron', vartype=0, nsis=NULL, rank.method='obj', eps0=1e-3,
+SIS <- function(data=NULL, model='glm', family=NULL, method='efron', vartype=0, nsis=NULL, rank.method='obj', eps0=1e-5,
 inittype='NoPen', tune.method='BIC', folds=NULL, post.tune.method='CV',post.tune.folds=NULL, DOISIS=TRUE, ISIStypeCumulative=FALSE, maxloop=5,
  xtune=NULL, ytune=NULL, detail=FALSE){
     if (is.null(data)) 

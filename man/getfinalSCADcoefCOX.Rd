@@ -9,7 +9,7 @@
   }
 \usage{
 getfinalSCADcoefCOX(x, time, status, method = "efron", pickind, 
-folds = NULL, eps0 = 1e-3, tune.method = "AIC", inittype = "NoPen", 
+folds = NULL, eps0 = 1e-5, tune.method = "AIC", inittype = "NoPen",
 detailed = FALSE)
 }
 \arguments{

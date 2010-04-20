@@ -9,11 +9,11 @@
   }
 \usage{
 COXvanISISscad(x, time, status,  method = "efron", nsis=NULL, folds=NULL, 
-rank.method="obj", eps0=1e-3, inittype='NoPen', tune.method="AIC", 
+rank.method="obj", eps0=1e-5, inittype='NoPen', tune.method="AIC",
 ISIStypeCumulative=FALSE, DOISIS=TRUE, maxloop=5)
 
 COXvarISISscad(x, time, status,  method = "efron", nsis=NULL, folds=NULL, 
-rank.method="obj", eps0=1e-3, inittype='NoPen', tune.method="AIC", 
+rank.method="obj", eps0=1e-5, inittype='NoPen', tune.method="AIC",
 vartype="First",  ISIStypeCumulative=FALSE, DOISIS=TRUE, maxloop=5)
 }
 \arguments{
@@ -48,8 +48,8 @@ vartype="First",  ISIStypeCumulative=FALSE, DOISIS=TRUE, maxloop=5)
    \item{vartype}{
    \code{vartype} specifies variant (I)SIS of first type or second type.
    }
-   \item{ISIStypeCumulative}{
-   \code{ISIStypeCumulative} specifies whether to allow variable deletion in each step of ISIS. (\code{ISIStypeCumulative}= FALSE allows variable deletion)
+  \item{ISIStypeCumulative}{
+   \code{ISIStypeCumulative} specifies whether to penalize variables selected by the previous step of the ISIS iteration in the following SCAD step. (\code{ISIStypeCumulative}= FALSE put penalties on all variables. In this case, the procedure is more likely to delete variables from previous step. )
    }
    \item{DOISIS}{
    \code{DOISIS} specifies whether to do iterative SIS.
@@ -58,7 +58,7 @@ vartype="First",  ISIStypeCumulative=FALSE, DOISIS=TRUE, maxloop=5)
    maximum number of loops in iterative SIS.
    }
   \item{eps0}{
-      an effective zero.
+      an effective zero relative to the scale of the maximum absolute marginal regression coefficients.
   }
 }
 \value{Returns an object with

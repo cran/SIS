@@ -1,9 +1,10 @@
-INDEPtuneSCADglm <- function (x, y, wt.initsoln = wt.initsoln, xtune, ytune, dlambda = NULL,
-    maxlambda=NULL, family = family, nopenalty.subset = NULL) 
+INDEPtuneSCADglm <- function (x, y, wt.initsoln = NULL, xtune, ytune, dlambda = NULL,
+    max.lambda=NULL, family = NULL, nopenalty.subset = NULL)
 {
-   if(is.null(maxlambda)) maxlambda = findSCADMaxLambda(x, y, wt.initsoln = wt.initsoln, family = family)
-        
-   lambda.cand = maxlambda * (2^(seq(0, -20, -0.2)))
+   if(is.null(max.lambda)) max.lambda = findSCADMaxLambda(x, y, wt.initsoln = wt.initsoln, family = family)
+   if(is.null(family)) family=gaussian()
+   if(is.null(wt.initsoln)) stop("Initial Solution Required!")
+   lambda.cand = max.lambda * (2^(seq(0, -20, -0.2)))
 
    oldsoln = NULL
    tuneer = NULL
@@ -31,7 +32,7 @@ INDEPtuneSCADglm <- function (x, y, wt.initsoln = wt.initsoln, xtune, ytune, dla
         initsoln = oldsoln[[best.lambda.ind]], family = family, 
         nopenalty.subset = nopenalty.subset)
    return(list(wt.initsoln = wt.initsoln, tuneer = tuneer, best.lambda.ind = best.lambda.ind, 
-        maxlambda = maxlambda, w = w, used.lambda = lambda.cand[1:iloop], 
+        max.lambda = max.lambda, w = w, used.lambda = lambda.cand[1:iloop],
         best.lambda = lambda.cand[best.lambda.ind]))
 }
 
@@ -90,7 +91,7 @@ return(lambda)
  return(ifelse(wux[1]>=wux[2], wux[1], wux[1]+(wux[2]-wux[1])/a))
 }
 ############################################################################################################################################################
-CVscadglm <- function(x, y, wt.initsoln=NULL, dlambda=NULL, maxlambda=NULL, folds=NULL, 
+CVscadglm <- function(x, y, wt.initsoln=NULL, dlambda=NULL, max.lambda=NULL, folds=NULL,
   family=family, weight=NULL, offset=NULL, nopenalty.subset=NULL) {
 
 x=as.matrix(x)
@@ -98,10 +99,17 @@ n=nrow(x)
 if(is.null(offset)) offset=rep(0, nrow(x))
 if(is.null(weight)) weight=rep(1, nrow(x))
 if(is.null(wt.initsoln)) wt.initsoln=rep(0, ncol(x)+1)
-if(is.null(maxlambda)) maxlambda=findSCADMaxLambda(x, y, wt.initsoln=wt.initsoln, family=family)
+if(is.null(max.lambda)) max.lambda=findSCADMaxLambda(x, y, wt.initsoln=wt.initsoln, family=family)
 
-  lambda.cand=maxlambda*(2^(seq(0, -20, -0.2)))
- 
+
+if(max.lambda<4){
+  if(is.null(dlambda))dlambda=max.lambda/40
+  lambda.cand=seq(max.lambda,0, -dlambda)
+  lambda.cand=lambda.cand[lambda.cand>0]
+  }
+if(max.lambda>=4){
+  lambda.cand=max.lambda*(2^(seq(0, -10, -0.1)))
+  }
 if(is.null(folds)) {
 temp= sample(1:n, n, replace = FALSE)
 kfold=10
@@ -139,20 +147,25 @@ oldsoln.save[[iloop]]=oldsoln[[1]]
 }
 best.lambda.ind=which.min(tuneer) 
 w=scadglm(x, y, wt.initsoln=wt.initsoln, lambda=lambda.cand[best.lambda.ind], initsoln=oldsoln.save[[best.lambda.ind]], family = family, weight = weight, offset = offset, nopenalty.subset=nopenalty.subset)
-return(list(wt.initsoln=wt.initsoln, tuneer=tuneer, best.lambda.ind=best.lambda.ind, maxlambda=maxlambda, w=w, used.lambda=lambda.cand[1:iloop], best.lambda=lambda.cand[best.lambda.ind]))
+return(list(wt.initsoln=wt.initsoln, tuneer=tuneer, best.lambda.ind=best.lambda.ind, max.lambda=max.lambda, w=w, used.lambda=lambda.cand[1:iloop], best.lambda=lambda.cand[best.lambda.ind]))
 }    # end of CVscadglm function
 ############################################################################################################################################################
-AICBICscadglm <- function(x, y, wt.initsoln=wt.initsoln, dlambda=NULL, maxlambda=NULL, 
-   family=family, AICBIC='AIC', weight=NULL, offset=NULL, nopenalty.subset=NULL,  eps0=1e-3) {
+AICBICscadglm <- function(x, y, wt.initsoln=wt.initsoln, dlambda=NULL, max.lambda=NULL,
+   family=family, AICBIC='AIC', weight=NULL, offset=NULL, nopenalty.subset=NULL,  eps0=1e-5) {
 
 x=as.matrix(x)
 if(is.null(offset)) offset=rep(0, nrow(x))
 if(is.null(weight)) weight=rep(1, nrow(x))
-if(is.null(maxlambda)) maxlambda=findSCADMaxLambda(x, y, wt.initsoln=wt.initsoln, family=family)
+if(is.null(max.lambda)) max.lambda=findSCADMaxLambda(x, y, wt.initsoln=wt.initsoln, family=family)
 
-
-  lambda.cand=maxlambda*(2^(seq(0, -20, -0.2)))
- 
+if(max.lambda<4){
+  if(is.null(dlambda))dlambda=max.lambda/40
+  lambda.cand=seq(max.lambda,0, -dlambda)
+  lambda.cand=lambda.cand[lambda.cand>0]
+  }
+if(max.lambda>=4){
+  lambda.cand=max.lambda*(2^(seq(0, -10, -0.1)))
+  }
 AB.factor=switch(AICBIC, AIC=2, BIC=log(nrow(x)))
 
 oldsoln=NULL
@@ -160,20 +173,20 @@ oldsoln=NULL
 tuneer=NULL
 iloop=1
 oldsoln[[iloop]]=scadglm(x, y, wt.initsoln=wt.initsoln, lambda=lambda.cand[iloop], initsoln=NULL, family = family, weight = weight, offset = offset, nopenalty.subset=nopenalty.subset)
-tuneer[iloop]=length(which(abs(oldsoln[[iloop]][-1])>eps0))*AB.factor+2*familyglmNEGloglik(x, y, oldsoln[[iloop]], family=family, weight=weight, offset=offset)
+tuneer[iloop]=length(which(abs(oldsoln[[iloop]][-1])>eps0 * max(abs(oldsoln[[iloop]][-1]))))*AB.factor+2*familyglmNEGloglik(x, y, oldsoln[[iloop]], family=family, weight=weight, offset=offset)
 
 for (iloop in 2:length(lambda.cand)) {
  oldsoln[[iloop]]=scadglm(x, y, wt.initsoln=wt.initsoln, lambda=lambda.cand[iloop], initsoln=oldsoln[[iloop-1]], family = family, weight = weight, offset = offset, nopenalty.subset=nopenalty.subset)
- tuneer[iloop]=length(which(abs(oldsoln[[iloop]][-1])>eps0))*AB.factor+2*familyglmNEGloglik(x, y, oldsoln[[iloop]], family=family, weight=weight, offset=offset)
+ tuneer[iloop]=length(which(abs(oldsoln[[iloop]][-1])>eps0 * max(abs(oldsoln[[iloop]][-1]))))*AB.factor+2*familyglmNEGloglik(x, y, oldsoln[[iloop]], family=family, weight=weight, offset=offset)
 }
 
 best.lambda.ind=which.min(tuneer) 
 w=scadglm(x, y, wt.initsoln=wt.initsoln, lambda=lambda.cand[best.lambda.ind], initsoln=oldsoln[[best.lambda.ind]], family = family, weight = weight, offset = offset, nopenalty.subset=nopenalty.subset)
-return(list(wt.initsoln=wt.initsoln, tuneer=tuneer, best.lambda.ind=best.lambda.ind, maxlambda=maxlambda, w=w, used.lambda=lambda.cand[1:iloop], best.lambda=lambda.cand[best.lambda.ind]))
+return(list(wt.initsoln=wt.initsoln, tuneer=tuneer, best.lambda.ind=best.lambda.ind, max.lambda=max.lambda, w=w, used.lambda=lambda.cand[1:iloop], best.lambda=lambda.cand[best.lambda.ind]))
 }    # end of CVscadglm function
 ############################################################################################################################################################
 "fullscadglm" <- function(x, y, lambda, initsoln=NULL, family = binomial(), 
-   weight = NULL, offset = NULL, function.precision=1e-8, nopenalty.subset=NULL, eps0=1e-6) {
+   weight = NULL, offset = NULL, function.precision=1e-10, nopenalty.subset=NULL, eps0=1e-5, maxloop=10) {
 
   if(is.null(offset)) offset=rep(0, nrow(x))
   if(is.null(weight)) weight=rep(1, nrow(x))
@@ -184,12 +197,14 @@ if(is.null(initsoln)) initsoln=rep(0, pdim+1)
 
 wold=initsoln
 test=1
-while(test) {
+loop=1
+while(test & loop < maxloop) {
+loop=loop+1
 lassoweight=nobs*scadderiv(abs(wold[-1]), 3.7, lambda)
 lassoweight[nopenalty.subset]=0
 wnew=wtlassoglm(x, y, lassoweight=lassoweight, initsoln=wold, family=family, weight=weight, 
       offset=offset, lambda2=0, function.precision=function.precision)$w
-if(sum((wold-wnew)^2)<eps0) test=0
+if(sum((wold-wnew)^2)<eps0*abs(max(wold))) test=0
  wold=wnew
 }
       
@@ -197,7 +212,7 @@ return(wnew)
 }
 ############################################################################################################################################################
 "scadglm" <- function(x, y, wt.initsoln=NULL, lambda, initsoln=NULL, family = binomial(), 
-   weight = NULL, offset = NULL, function.precision=1e-8, nopenalty.subset=NULL) {
+   weight = NULL, offset = NULL, function.precision=1e-10, nopenalty.subset=NULL) {
 
    x=as.matrix(x)
   if(is.null(offset)) offset=rep(0, nrow(x))
@@ -212,7 +227,7 @@ return(wtlassoglm(x, y, lassoweight=lassoweight, initsoln=initsoln, family=famil
 }
 ############################################################################################################################################################
 "wtlassoglm" <- function(x, y, lassoweight=NULL, initsoln=NULL,   family = binomial(), weight = NULL, 
-      offset = NULL, lambda2=0, function.precision=1e-8) {
+      offset = NULL, lambda2=0, function.precision=1e-10) {
 
   if(is.null(offset)) offset=rep(0, nrow(x))
   if(is.null(weight)) weight=rep(1, nrow(x))
@@ -296,7 +311,7 @@ force.active=1
       if (k > 0) a0 <- sol$xn[(p+1):(p+k)]
 
 
-      if (sol$inform != 0) warning("\nconvergence warning in corrector step\n")
+      if (sol$inform != 0) warning("\nconvergence warning in wtlassoglm.\n")
 
 
 
@@ -310,7 +325,7 @@ force.active=1
 
 
 ################################################################
-INDEPgetfinalSCADcoef <- function(x, y, pickind, folds=NULL,  xtune, ytune, family=binomial(),  inittype='NoPen', eps0=1e-3, detailed=FALSE) {
+INDEPgetfinalSCADcoef <- function(x, y, pickind, folds=NULL,  xtune, ytune, family=binomial(),  inittype='NoPen', eps0=1e-5, detailed=FALSE) {
 
 fp=ncol(x)
 fn=nrow(x)
@@ -324,11 +339,10 @@ if(inittype=='L1') {
 if(inittype=='NoPen') {
 wt.initsoln=coef(glm.fit(cbind(ones, x[, pickind]), y, family=family))
 }
-
 SCADresult=INDEPtuneSCADglm(x[, pickind], y, wt.initsoln=wt.initsoln, xtune[, pickind], ytune, family=family)
  
 tempw=SCADresult$w
-tempw[abs(tempw)<eps0]=0
+tempw[abs(tempw)<eps0*max(abs(tempw))]=0
 SCADcoef=rep(0, fp+1)
 SCADcoef[c(1, pickind+1)]=tempw # SCADresult$w
   
@@ -344,7 +358,7 @@ SCADcoef[c(1, pickind+1)]=tempw # SCADresult$w
 
 ######################################################################################################################
 
-getfinalSCADcoef <- function(x, y, pickind, folds=NULL, eps0=1e-3, family=binomial(), tune.method="AIC", inittype='NoPen', detailed=FALSE) {
+getfinalSCADcoef <- function(x, y, pickind, folds=NULL, eps0=1e-5, family=binomial(), tune.method="AIC", inittype='NoPen', detailed=FALSE) {
 
 fp=ncol(x)
 fn=nrow(x)
@@ -359,6 +373,7 @@ if(inittype=='NoPen') {
 wt.initsoln=coef(glm.fit(cbind(ones, x[, pickind]), y, family=family))
 }
 
+
 SCADresult=switch(tune.method,
 CV=CVscadglm(x[, pickind], y, wt.initsoln=wt.initsoln, dlambda=NULL, folds=folds, family=family),
 AIC=AICBICscadglm(x[, pickind], y, wt.initsoln=wt.initsoln, dlambda=NULL, family=family, AICBIC='AIC', eps0=eps0),
@@ -366,7 +381,7 @@ BIC=AICBICscadglm(x[, pickind], y, wt.initsoln=wt.initsoln, dlambda=NULL, family
          
 
 tempw=SCADresult$w
-tempw[abs(tempw)<eps0]=0
+tempw[abs(tempw)< eps0 * max(abs(tempw))]=0
 SCADcoef=rep(0, fp+1)
 SCADcoef[c(1, pickind+1)]=tempw # SCADresult$w
   
@@ -380,7 +395,7 @@ SCADcoef[c(1, pickind+1)]=tempw # SCADresult$w
 
 #########################################################
 
-getfinalLASSOcoef <- function(x, y, pickind, folds=folds, eps0=1e-3, family=binomial(), tune.method="AIC", inittype='NoPen') {
+getfinalLASSOcoef <- function(x, y, pickind, folds=folds, eps0=1e-5, family=binomial(), tune.method="AIC", inittype='NoPen') {
 
 fp=ncol(x)
 fn=nrow(x)
@@ -396,7 +411,7 @@ BIC=AICBICscadglm(x[, pickind], y, wt.initsoln=wt.initsoln, dlambda=NULL, family
          
 
 tempw=SCADresult$w
-tempw[abs(tempw)<eps0]=0
+tempw[abs(tempw)<eps0 * max(abs(tempw))]=0
 SCADcoef=rep(0, fp+1)
 SCADcoef[c(1, pickind+1)]=tempw # SCADresult$w
   
@@ -406,7 +421,7 @@ return(list(wt.initsoln=wt.initsoln, SCADcoef=SCADcoef, SCADresult=SCADresult))
       
 ###############################################
 GLMvanISISscad <- function(x, y, nsis=NULL, family=binomial(), folds=folds, rank.method="obj",
-  eps0=1e-3, inittype='NoPen', tune.method="AIC",  ISIStypeCumulative=FALSE, DOISIS=TRUE, maxloop=5) {
+  eps0=1e-5, inittype='NoPen', tune.method="AIC",  ISIStypeCumulative=FALSE, DOISIS=TRUE, maxloop=5) {
 ### ISIStypeCumulative: TRUE     selected variable is     curmulated
 #                        FALSE                         NOT curmulated
 if((inittype!='NoPen')&&(inittype!='L1')) stop("inittype must be either 'NoPen' or 'L1'")
@@ -450,7 +465,7 @@ SCADresult=switch(tune.method,
           BIC=AICBICscadglm(x[, pickind], y, wt.initsoln=wt.initsoln, dlambda=NULL, family=family, AICBIC="BIC", eps0=eps0)) 
 cur.coef=SCADresult$w
 
-nonzeroindc=which(abs(cur.coef[-1])>eps0)
+nonzeroindc=which(abs(cur.coef[-1])>eps0 *max(abs(cur.coef[-1])) )
 
 ISISind=sort(pickind[nonzeroindc])
 test=if(length(ISISind)<nsis) 1 else 0
@@ -499,7 +514,7 @@ while(test) {
             BIC=AICBICscadglm(x[, pickind], y, wt.initsoln=wt.initsoln, dlambda=NULL, family=family, AICBIC="BIC", eps0=eps0, nopenalty.subset=nopenalty.subset)) 
 
   cur.coef=SCADresult$w
-  nonzeroindc=which(abs(cur.coef[-1])>eps0)
+  nonzeroindc=which(abs(cur.coef[-1])> eps0 * max(abs(cur.coef[-1])))
 
   ISISind=sort(pickind[nonzeroindc])
  
@@ -524,7 +539,7 @@ while(test) {
 
 
 GLMvarISISscad <- function(x, y, nsis=NULL, family=binomial(), folds=folds, rank.method="obj",
-    tune.method="AIC", vartype="First", eps0=1e-3, inittype='NoPen',  ISIStypeCumulative=FALSE, DOISIS=TRUE, maxloop=5) {
+    tune.method="AIC", vartype="First", eps0=1e-5, inittype='NoPen',  ISIStypeCumulative=FALSE, DOISIS=TRUE, maxloop=5) {
 ### ISIStypeCumulative: TRUE     selected variable is     curmulated
 #                        FALSE                         NOT curmulated
 if((inittype!='NoPen')&&(inittype!='L1')) stop("inittype must be either 'regularGLM' or 'regularGLM'")
@@ -611,7 +626,7 @@ if(inittype=='NoPen') {
             BIC=AICBICscadglm(x[, pickindall], y, wt.initsoln=wt.initsoln, dlambda=NULL, family=family, AICBIC="BIC", eps0=eps0)) 
 
 cur.coef=SCADresult$w
-nonzeroindc=which(abs(cur.coef[-1])>eps0)
+nonzeroindc=which(abs(cur.coef[-1])> eps0 * max(abs(cur.coef[-1])))
 ISISind=sort(pickindall[nonzeroindc])
 
 test=if(length(ISISind)<nsis) 1 else 0
@@ -670,7 +685,8 @@ if(inittype=='L1') {
 if(inittype=='NoPen') {
   wt.initsoln=coef(glm.fit(cbind(ones, x[, pickindall]), y, family=family))
 }
-    if(ISIStypeCumulative) nopenalty.subset=seq(length(ISISind)) else   nopenalty.subset=NULL
+
+if(ISIStypeCumulative) nopenalty.subset=seq(length(ISISind)) else   nopenalty.subset=NULL
 
 SCADresult=switch(tune.method,
           CV=CVscadglm(x[, pickindall], y, wt.initsoln=wt.initsoln, dlambda=NULL, folds=folds, family=family, nopenalty.subset=nopenalty.subset),
@@ -680,7 +696,7 @@ SCADresult=switch(tune.method,
 
  
  cur.coef=SCADresult$w
- nonzeroindc=which(abs(cur.coef[-1])>eps0)
+ nonzeroindc=which(abs(cur.coef[-1])>eps0 * max(abs(cur.coef[-1])))
  ISISind=sort(pickindall[nonzeroindc])
  curloop=curloop+1
   detail.pickind[[curloop]]=pickindall
