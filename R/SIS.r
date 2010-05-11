@@ -1,6 +1,7 @@
 SIS <- function(data=NULL, model='glm', family=NULL, method='efron', vartype=0, nsis=NULL, rank.method='obj', eps0=1e-5,
 inittype='NoPen', tune.method='BIC', folds=NULL, post.tune.method='CV',post.tune.folds=NULL, DOISIS=TRUE, ISIStypeCumulative=FALSE, maxloop=5,
  xtune=NULL, ytune=NULL, detail=FALSE){
+    t0 = proc.time()[1]
     if (is.null(data)) 
         stop("The data is missing!")
     if (model=='glm') {
@@ -120,13 +121,14 @@ inittype='NoPen', tune.method='BIC', folds=NULL, post.tune.method='CV',post.tune
             }
         }
     }
+    ptime = proc.time()[1]-t0
     if (detail == FALSE) {
         return(list(SISind = SISresult$SIS, ISISind = SISresult$ISIS, 
-            SIScoef = SIScoef$SCADcoef, ISIScoef = ISIScoef$SCADcoef))
+            SIScoef = SIScoef$SCADcoef, ISIScoef = ISIScoef$SCADcoef, ptime=ptime))
     }
     else {
         return(list(SISresult = SISresult, SIScoef = SIScoef, 
-            ISIScoef = ISIScoef))
+            ISIScoef = ISIScoef, ptime=ptime))
     }
 }
 

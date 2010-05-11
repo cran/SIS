@@ -558,10 +558,10 @@ x1=scale(x1)
 y1=y[1:fn.half]
 ones1=ones[1:fn.half]
 
-x2=x[(1+fn.half):fn.half, ]
+x2=x[(1+fn.half):fn, ]
 x2=scale(x2)
-y2=y[(1+fn.half):fn.half]
-ones2=ones[(1+fn.half):fn.half]
+y2=y[(1+fn.half):fn]
+ones2=ones[(1+fn.half):fn]
 ###########################################
 tempdev01=NULL
 tempmycoef01=NULL
