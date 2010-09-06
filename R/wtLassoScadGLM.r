@@ -4,7 +4,7 @@ INDEPtuneSCADglm <- function (x, y, wt.initsoln = NULL, xtune, ytune, dlambda = 
    if(is.null(max.lambda)) max.lambda = findSCADMaxLambda(x, y, wt.initsoln = wt.initsoln, family = family)
    if(is.null(family)) family=gaussian()
    if(is.null(wt.initsoln)) stop("Initial Solution Required!")
-   lambda.cand = max.lambda * (2^(seq(0, -20, -0.2)))
+   lambda.cand = max.lambda * (2^(seq(0, -10, -0.2)))
 
    oldsoln = NULL
    tuneer = NULL
@@ -92,7 +92,7 @@ return(lambda)
 }
 ############################################################################################################################################################
 CVscadglm <- function(x, y, wt.initsoln=NULL, dlambda=NULL, max.lambda=NULL, folds=NULL,
-  family=family, weight=NULL, offset=NULL, nopenalty.subset=NULL) {
+  family=gaussian(), weight=NULL, offset=NULL, nopenalty.subset=NULL) {
 
 x=as.matrix(x)
 n=nrow(x)
@@ -101,15 +101,7 @@ if(is.null(weight)) weight=rep(1, nrow(x))
 if(is.null(wt.initsoln)) wt.initsoln=rep(0, ncol(x)+1)
 if(is.null(max.lambda)) max.lambda=findSCADMaxLambda(x, y, wt.initsoln=wt.initsoln, family=family)
 
-
-if(max.lambda<4){
-  if(is.null(dlambda))dlambda=max.lambda/40
-  lambda.cand=seq(max.lambda,0, -dlambda)
-  lambda.cand=lambda.cand[lambda.cand>0]
-  }
-if(max.lambda>=4){
-  lambda.cand=max.lambda*(2^(seq(0, -10, -0.1)))
-  }
+lambda.cand=max.lambda*(2^(seq(0, -10, -0.2)))
 if(is.null(folds)) {
 temp= sample(1:n, n, replace = FALSE)
 kfold=10
@@ -158,14 +150,9 @@ if(is.null(offset)) offset=rep(0, nrow(x))
 if(is.null(weight)) weight=rep(1, nrow(x))
 if(is.null(max.lambda)) max.lambda=findSCADMaxLambda(x, y, wt.initsoln=wt.initsoln, family=family)
 
-if(max.lambda<4){
-  if(is.null(dlambda))dlambda=max.lambda/40
-  lambda.cand=seq(max.lambda,0, -dlambda)
-  lambda.cand=lambda.cand[lambda.cand>0]
-  }
-if(max.lambda>=4){
-  lambda.cand=max.lambda*(2^(seq(0, -10, -0.1)))
-  }
+
+lambda.cand=max.lambda*(2^(seq(0, -10, -0.2)))
+
 AB.factor=switch(AICBIC, AIC=2, BIC=log(nrow(x)))
 
 oldsoln=NULL

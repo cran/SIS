@@ -419,14 +419,8 @@ for(i in 1:kfold){
 
 max.lambda = findSCADMaxLambda.cox(x, time, status, wt.initsoln) 
 
-if(max.lambda<4){
-  if(is.null(dlambda))dlambda=max.lambda/40
-  lambda.cand=seq(max.lambda,0, -dlambda)
-  lambda.cand=lambda.cand[lambda.cand>0]
-  }
-if(max.lambda>=4){
-  lambda.cand=max.lambda*(2^(seq(0, -10, -0.1)))
-  }
+lambda.cand=max.lambda*(2^(seq(0, -10, -0.2)))
+
   
 n.folds=length(folds)
 nobs.fold=NULL
@@ -494,15 +488,8 @@ for(i in 1:kfold){
 }
 
 max.lambda = findLASSOMaxLambda.cox(x, time, status) 
+lambda.cand=max.lambda*(2^(seq(0, -10, -0.2)))
 
-if(max.lambda<4){
-  if(is.null(dlambda))dlambda=max.lambda/40
-  lambda.cand=seq(max.lambda,0, -dlambda)
-  lambda.cand=lambda.cand[lambda.cand>0]
-  }
-if(max.lambda>=4){
-  lambda.cand=max.lambda*(2^(seq(0, -10, -0.1)))
-  }
   
 n.folds=length(folds)
 nobs.fold=NULL
@@ -560,14 +547,8 @@ if(is.null(wt.initsoln)) wt.initsoln=rep(0, ncol(x))
 
 max.lambda = findSCADMaxLambda.cox(x, time, status,  wt.initsoln) 
 
-if(max.lambda<4) {
-  if(is.null(dlambda)) dlambda=max.lambda/40
-  lambda.cand=seq(max.lambda, 0, -dlambda)
-  lambda.cand=lambda.cand[lambda.cand>0]
- } 
- if(max.lambda>=4)  {
-  lambda.cand=max.lambda*(2^(seq(0, -10, -0.1)))
- }
+lambda.cand=max.lambda*(2^(seq(0, -10, -0.2)))
+
  
 AB.factor=switch(AICBIC, AIC=2, BIC=log(nrow(x)))
 
@@ -622,7 +603,7 @@ return(list(wt.initsoln=wt.initsoln, tuneer=tuneer, best.lambda.ind=best.lambda.
     wold = initsoln
     test = 1
     loop = 1
-    while (test & loop>maxloop) {
+    while (test & loop<maxloop) {
         loop = loop + 1
         lasso.weight <- n * scadderiv(abs(wold), 3.7, lambda)
         lasso.weight[nopenalty.subset] <- 0

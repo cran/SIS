@@ -126,8 +126,8 @@ ytune=rbinom(n, 1, fprob)
 binom.result1=SIS(data=list(x=x, y=y), family=binomial(), xtune=xtune, ytune=ytune)
 binom.result2=SIS(data=list(x=x, y=y), family=binomial(), xtune=xtune, ytune=ytune, 
 vartype=1)
-binom.result3=SIS(data=list(x=x, y=y), family=binomial(), xtune=xtune, ytune=ytune, 
-vartype=2)
+binom.result1$ISISind
+binom.result2$ISISind
 
 
 
