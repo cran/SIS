@@ -1,5 +1,4 @@
-useDynLib(SIS)
-
-export(wtlassoglm, fullscadglm, scadglm,  INDEPgetfinalSCADcoef, getfinalSCADcoef,  GLMvanISISscad, GLMvarISISscad,
-wtlassocox, fullscadcox, scadcox, getfinalSCADcoefCOX, COXvanISISscad, COXvarISISscad, SIS)
-
+import(glmnet,ncvreg,survival)
+export(SIS, predict.SIS, print.SIS)
+S3method("print", "SIS")
+S3method("predict", "SIS")

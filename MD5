@@ -1,0 +1,13 @@
+1a10fd69b3bfd8313cbcf8a9e0d8f6e9 *DESCRIPTION
+4e349570bb27024dcb1b47470c0bb351 *NAMESPACE
+2b4205eaea1404e66d976dc60b0dc599 *R/SIS.R
+c8c5c4d1783f4f37911f0f0642933824 *R/margcoef.R
+16f76037608c35fa3905fe54e9f33f31 *R/obtainindex.R
+cb035bd8e18398b1636c0af16d8463a5 *R/partialfits.r
+4baa995ddbabed6249c1f6c7de9b3320 *R/predict.SIS.R
+64c03022afde5ceb2f012b5678939e95 *R/print.SIS.R
+a5a3e614518d22a1fdafdfb00c897a3b *R/setsize.R
+a672d4d6a0a6a9c5cb41b58f968edea5 *R/standardize.R
+db89484593a2b0dc20fedb884561dbd5 *man/SIS.Rd
+5b5a2d9708812297ab1acf5894200921 *man/predict.SIS.Rd
+b061ec5eb1567cbe20c7ef92bd3f64d8 *man/print.SIS.Rd

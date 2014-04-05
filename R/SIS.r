@@ -1,134 +1,109 @@
-SIS <- function(data=NULL, model='glm', family=NULL, method='efron', vartype=0, nsis=NULL, rank.method='obj', eps0=1e-5,
-inittype='NoPen', tune.method='BIC', folds=NULL, post.tune.method='CV',post.tune.folds=NULL, DOISIS=TRUE, ISIStypeCumulative=FALSE, maxloop=5,
- xtune=NULL, ytune=NULL, detail=FALSE){
-    t0 = proc.time()[1]
-    if (is.null(data)) 
-        stop("The data is missing!")
-    if (model=='glm') {
-     if(length(data)!=2)
-        stop('The number of components of the dataset is not correct')
-     if(is.null(family))
-        family=gaussian()
-    # if(family$family == "binomial" & (is.null(xtune) | is.null(ytune))) 
-    #    stop("Independent tuning data required for logit link.")
-     x=data[[1]]
-     y=data[[2]]
-     }
-    else if(model=='cox'){
-      if(length(data)!=3)
-        stop('The number of components of the dataset is not correct')
-     x=data[[1]]
-     time=data[[2]]
-     status=data[[3]]
-     }
-    else {
-      stop('This model has not yet been implemented!')
-      }
+SIS <- function(x, y, family = c("gaussian","binomial","poisson","cox"), penalty=c("SCAD","MCP","lasso"), concavity.parameter = switch(penalty, SCAD=3.7, 3), tune = c("cv","aic","bic","ebic"), nfolds = 10, 
+                type.measure = c("deviance","class","auc","mse","mae"), gamma.ebic = 1, nsis = NULL, iter = TRUE, iter.max = ifelse(greedy==FALSE, 10, floor(nrow(x)/log(nrow(x)))), 
+                varISIS = c("vanilla","aggr","cons"), perm = FALSE, q = 1, greedy = FALSE, greedy.size = 1, seed = 0, standardize = TRUE){
+  
+    this.call=match.call()
+    family = match.arg(family)
+    penalty = match.arg(penalty)
+    tune = match.arg(tune)
+    type.measure = match.arg(type.measure)
+    varISIS = match.arg(varISIS)
+                
+    if(is.null(x)||is.null(y)) stop("The data is missing!")  
+    if(class(concavity.parameter) != "numeric") stop("concavity.parameter must be numeric!")   
+    if(class(nfolds) != "numeric") stop("nfolds must be numeric!")
+    if(class(seed) != "numeric") stop("seed must be numeric!")
        
-    n = nrow(x)
-    p = ncol(x)
-    if (is.null(nsis)) {
-        if (vartype == 1) 
-            nsis = floor(min(p,n/log(n)))
-        else nsis = floor(min(p,n/4/log(n)))
-    }
-    if (is.null(post.tune.folds) & post.tune.method == "CV") {
-        temp = sample(1:n, n, replace = FALSE)
-        kfold = 10
-        post.tune.folds = NULL
-        for (i in 1:kfold) {
-            post.tune.folds[[i]] = setdiff(1:n, temp[seq(i, n, 
-                kfold)])
-        }
-    }
-    if (model=='glm') {
-        if (vartype == 0) {
-            SISresult = GLMvanISISscad(x = x, y = y, nsis = nsis, 
-                family = family, folds = folds, rank.method = rank.method, 
-                eps0 = eps0, inittype = inittype, tune.method = tune.method, 
-                ISIStypeCumulative = ISIStypeCumulative, DOISIS = DOISIS, 
-                maxloop = maxloop)
-        }
-        else {
-        if (vartype == 1) 
-                varchar = "First"
-            else varchar = "Second"
-            SISresult = GLMvarISISscad(x = x, y = y, nsis = nsis, 
-                family = family, folds = folds, vartype = varchar, 
-                rank.method = rank.method, eps0 = eps0, inittype = inittype, 
-                tune.method = tune.method, ISIStypeCumulative = ISIStypeCumulative, 
-                DOISIS = DOISIS, maxloop = maxloop)
-        }
-        if (family$family == "binomial" & !(is.null(xtune) | is.null(ytune))) {
-            SIScoef = (INDEPgetfinalSCADcoef(x = x, y = y, 
-                pickind = SISresult$SISind, xtune = xtune, ytune = ytune, 
-                family = family, inittype = inittype))
-           if (DOISIS) {
-            if (length(SISresult$ISIS) == 0) {
-                ISIScoef = NULL
-            } else {
-            ISIScoef = (INDEPgetfinalSCADcoef(x = x, y = y, 
-                pickind = SISresult$ISISind, xtune = xtune, ytune = ytune, 
-                family = family, inittype = inittype))
-                }
-        }
-        }
-        else {
-            SIScoef = (getfinalSCADcoef(x = x, y = y, pickind = SISresult$SISind, 
-                folds = post.tune.folds, eps0 = eps0, family = family, 
-                tune.method = post.tune.method, inittype = "NoPen"))
-                if (DOISIS) {
-            if (length(SISresult$ISIS) == 0) {
-                ISIScoef = NULL
-            } else {
-            ISIScoef = (getfinalSCADcoef(x = x, y = y, pickind = SISresult$ISISind, 
-                folds = post.tune.folds, eps0 = eps0, family = family, 
-                tune.method = post.tune.method, inittype = "NoPen"))
-                }
-        }
-    }
-    }
-    else if(model=='cox') {
-        if (vartype == 0) {
-            SISresult <- COXvanISISscad(x = x, time = time, method = method, 
-                folds = folds, status = status, nsis = nsis, 
-                rank.method = rank.method, eps0 = eps0, inittype = inittype, 
-                tune.method = tune.method, DOISIS = DOISIS, maxloop = maxloop)
-        }
-        else {
-            if (vartype == 1) 
-                varchar = "First"
-            else varchar = "Second"
-            SISresult <- COXvarISISscad(x = x, time = time, method = method, 
-                folds = folds, status = status, nsis = nsis, 
-                rank.method = rank.method, eps0 = eps0, inittype = inittype, 
-                vartype = varchar, ISIStypeCumulative = ISIStypeCumulative, 
-                tune.method = tune.method, DOISIS = DOISIS, maxloop = maxloop)
-        }
-        SIScoef = getfinalSCADcoefCOX(x = x, time = time, status = status, 
-            pickind = SISresult$SIS, folds = post.tune.folds, 
-            eps0 = eps0, tune.method = post.tune.method, inittype = inittype, 
-            method = method)
-        if (DOISIS) {
-            if (length(SISresult$ISIS) == 0) {
-                ISIScoef = NULL
-            }
-            else {
-                ISIScoef = getfinalSCADcoefCOX(x = x, time = time, 
-                  status = status, pickind = SISresult$ISIS, 
-                  folds = post.tune.folds, eps0 = eps0, tune.method = post.tune.method, 
-                  inittype = inittype, method = method)
-            }
-        }
-    }
-    ptime = proc.time()[1]-t0
-    if (detail == FALSE) {
-        return(list(SISind = SISresult$SIS, ISISind = SISresult$ISIS, 
-            SIScoef = SIScoef$SCADcoef, ISIScoef = ISIScoef$SCADcoef, ptime=ptime))
-    }
-    else {
-        return(list(SISresult = SISresult, SIScoef = SIScoef, 
-            ISIScoef = ISIScoef, ptime=ptime))
-    }
+    if(family == "cox" && penalty%in%c("SCAD","MCP"))
+       stop("Cox model currently not implemented with selected penalty")
+            
+    if(type.measure%in%c("class","auc") && family%in%c("gaussian","poisson","cox"))
+       stop("'class' and 'auc' type measures are only available for logistic regression")       
+       
+    if(type.measure%in%c("class","auc","mse","mae") && penalty%in%c("SCAD","MCP"))
+       stop("Only 'deviance' is available as type.measure for non-convex penalties")              
+    
+    fit = switch(family,
+          "gaussian"=sisglm(x, y, "gaussian", penalty, concavity.parameter, tune, nfolds, type.measure, gamma.ebic, nsis, iter, iter.max, varISIS, perm, q, greedy, greedy.size, seed, standardize),
+          "binomial"=sisglm(x, y, "binomial", penalty, concavity.parameter, tune, nfolds, type.measure, gamma.ebic, nsis, iter, iter.max, varISIS, perm, q, greedy, greedy.size, seed, standardize),
+          "poisson"=sisglm(x, y, "poisson", penalty, concavity.parameter, tune, nfolds, type.measure, gamma.ebic, nsis, iter, iter.max, varISIS, perm, q, greedy, greedy.size, seed, standardize),
+          "cox"=sisglm(x, y, "cox", penalty, concavity.parameter, tune, nfolds, type.measure, gamma.ebic, nsis, iter, iter.max, varISIS, perm, q, greedy, greedy.size, seed, standardize)
+          )
+    fit$call=this.call
+    class(fit)=c(class(fit),"SIS")
+    return(fit)
 }
 
+sisglm <- function(x, y, family, penalty, concavity.parameter, tune, nfolds, type.measure, gamma.ebic, nsis, iter, iter.max, varISIS, perm, q, greedy, greedy.size, seed, standardize){
+  
+  set.seed(seed)
+  storage.mode(x) = "numeric"
+  n = dim(x)[1]; p = dim(x)[2]
+  models = vector("list")
+  if(is.null(nsis)==TRUE) nsis = calculate.nsis(family=family, varISIS=varISIS, n=n, p=p)  
+  split.sample = sample(1:n); s1 = split.sample[1:ceiling(n/2)]; s2 = setdiff(split.sample,s1)
+  if(standardize == TRUE){ 
+     old.x = x
+     x = standardize(x)
+  }
+  iterind = 0 
+  
+  if(iter == TRUE){
+     ix0 = sort(obtain.ix0(x=x, y=y, s1=s1, s2=s2, family=family, nsis=nsis, iter=iter, varISIS=varISIS, perm=perm, q=q, greedy=greedy, greedy.size=greedy.size, iterind=iterind))
+     repeat{
+        iterind = iterind + 1
+        cat("Iter ", iterind, ": ", ix0,"\n")
+        coef.beta = obtain.beta(x, y, ix0, family, penalty, concavity.parameter, tune, nfolds, type.measure, gamma.ebic)
+        ix1 = sort(ix0[which(abs(coef.beta)>1e-10)])
+        if(length(ix1) == 0)
+           stop(cat("No variables remaining after ", iterind," steps! Try a more conservative variable screening approach! \n"))        
+        cat("Iter ", iterind, ": ix1:", ix1,"\n")
+        if(length(ix1) >= nsis || iterind >= iter.max){
+           ix0 = ix1
+           if(length(ix1) >= nsis)
+              cat("Maximum number of variables selected \n")
+           if(iterind >= iter.max)
+              cat("Maximum number of iterations reached \n")              
+           break
+        }
+
+        models[[iterind]] = ix1; flag.models = 0
+        if(iterind > 1){
+           for(j in 1:(iterind-1)){
+               if(identical(models[[j]],ix1) == TRUE) flag.models = 1
+           }
+        }
+        if(flag.models==1){
+           ix0 = ix1
+           cat("Model already selected \n")
+           break   
+        }     
+        
+        candind = setdiff(1:p, ix1)
+        pleft = nsis - length(ix1)
+        newix = sort(obtain.newix(x=x, y=y, candind=candind, ix1=ix1, s1=s1, s2=s2, family=family, pleft=pleft, varISIS=varISIS, perm=perm, q=q, greedy=greedy, greedy.size=greedy.size, iterind=iterind))
+        cat("Iter ", iterind, ": newix:", newix,"\n")
+        ix1 = sort(c(ix1, newix))
+        if(setequal(ix1,ix0)){
+           ix0 = sort(setdiff(ix1,newix))
+           cat("Model already selected \n")
+           break
+        }
+        ix0 = ix1
+     }                        # end repeat
+ 
+  }else{                      # end if(iter==TRUE)
+     ix0 = sort(obtain.ix0(x=x, y=y, s1=s1, s2=s2, family=family, nsis=nsis, iter=iter, varISIS=varISIS, perm=perm, q=q, greedy=greedy, greedy.size=greedy.size, iterind=iterind))     
+     coef.beta = obtain.beta(x, y, ix0, family, penalty, concavity.parameter, tune, nfolds, type.measure, gamma.ebic)
+     ix0 = sort(ix0[which(abs(coef.beta)>1e-10)])   
+  }    
+   
+  # Unstandardize for final fit      
+  x.final = old.x[,ix0]
+  final = final.fit(as.matrix(x.final), y, family, penalty, concavity.parameter, tune, nfolds, type.measure, gamma.ebic)
+  if(tune == "cv") final.pre = as.vector(coef(final$fit, s="lambda.min"))
+  else final.pre = as.vector(coef(final$fit)[,final$ind])
+  if(family== "cox") names(final.pre) = paste("V", ix0, sep="") 
+  else names(final.pre) = c("(Intercept)", paste("V", ix0, sep=""))
+  return(list(ix=ix0, coef.est=final.pre, fit=final$fit, path.index=final$ind))
+}
