@@ -99,7 +99,8 @@ sisglm <- function(x, y, family, penalty, concavity.parameter, tune, nfolds, typ
   }    
    
   # Unstandardize for final fit      
-  x.final = old.x[,ix0]
+  if(standardize == TRUE) x.final = old.x[,ix0]
+  else x.final = x[,ix0]
   final = final.fit(as.matrix(x.final), y, family, penalty, concavity.parameter, tune, nfolds, type.measure, gamma.ebic)
   if(tune == "cv") final.pre = as.vector(coef(final$fit, s="lambda.min"))
   else final.pre = as.vector(coef(final$fit)[,final$ind])
