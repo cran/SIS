@@ -34,17 +34,19 @@ SIS <- function(x, y, family = c("gaussian","binomial","poisson","cox"), penalty
     return(fit)
 }
 
-sisglm <- function(x, y, family, penalty, concavity.parameter, tune, nfolds, type.measure, gamma.ebic, nsis, iter, iter.max, varISIS, perm, q, greedy, greedy.size, seed, standardize){
+sisglm <- function(x, y, family, penalty, concavity.parameter, tune, nfolds, type.measure, gamma.ebic, nsis, iter, iter.max, varISIS, perm, q, greedy, greedy.size, seed, standardize, s1=NULL, s2=NULL, split.tries=0){
   
-  set.seed(seed)
   storage.mode(x) = "numeric"
   n = dim(x)[1]; p = dim(x)[2]
   models = vector("list")
-  if(is.null(nsis)==TRUE) nsis = calculate.nsis(family=family, varISIS=varISIS, n=n, p=p)  
-  split.sample = sample(1:n); s1 = split.sample[1:ceiling(n/2)]; s2 = setdiff(split.sample,s1)
+  if(is.null(nsis)==TRUE) nsis = calculate.nsis(family=family, varISIS=varISIS, n=n, p=p)
+  if(is.null(s1)==TRUE){
+     set.seed(seed)
+     split.sample = sample(1:n); s1 = split.sample[1:ceiling(n/2)]; s2 = setdiff(split.sample,s1)
+  }
   if(standardize == TRUE){ 
      old.x = x
-     x = standardize(x)
+     x = scale(x)
   }
   iterind = 0 
   
@@ -55,8 +57,18 @@ sisglm <- function(x, y, family, penalty, concavity.parameter, tune, nfolds, typ
         cat("Iter ", iterind, ": ", ix0,"\n")
         coef.beta = obtain.beta(x, y, ix0, family, penalty, concavity.parameter, tune, nfolds, type.measure, gamma.ebic)
         ix1 = sort(ix0[which(abs(coef.beta)>1e-10)])
-        if(length(ix1) == 0)
-           stop(cat("No variables remaining after ", iterind," steps! Try a more conservative variable screening approach! \n"))        
+        if(length(ix1) == 0){
+           split.tries = split.tries + 1
+           split.sample = sample(1:n); s1 = split.sample[1:ceiling(n/2)]; s2 = setdiff(split.sample,s1)
+           cat("Sample splitting attempt: ", split.tries, "\n")
+           if(split.tries == 20){ 
+              varISIS = "vanilla"; perm = TRUE; greedy = FALSE; tune = "cv"
+              cat("No variables remaining after ", split.tries," sample splitting attempts! \n")
+              cat("Trying a more conservative variable screening approach with a data-driven threshold for marginal screening! \n")
+              return(sisglm(x, y, family, penalty, concavity.parameter, tune, nfolds, type.measure, gamma.ebic, nsis, iter, iter.max, varISIS, perm, q, greedy, greedy.size, seed, standardize, s1=NULL, s2=NULL))
+           }else 
+              return(sisglm(x, y, family, penalty, concavity.parameter, tune, nfolds, type.measure, gamma.ebic, nsis, iter, iter.max, varISIS, perm, q, greedy, greedy.size, seed, standardize, s1, s2, split.tries))
+        }      
         cat("Iter ", iterind, ": ix1:", ix1,"\n")
         if(length(ix1) >= nsis || iterind >= iter.max){
            ix0 = ix1

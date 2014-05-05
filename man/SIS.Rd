@@ -1,8 +1,8 @@
 \name{SIS}
 \alias{SIS}
 \title{
-(Iterative) Sure Independence Screening ((I)SIS) and fitting in Generalized Linear Models and Cox 
-Proportional Hazards Regression Models
+(Iterative) Sure Independence Screening ((I)SIS) and Fitting in Generalized Linear Models and Cox's 
+Proportional Hazards Models
 }
 \description{
  This function first implements the Iterative Sure Independence Screening for different variants of 
@@ -137,7 +137,7 @@ Jianqing Fan and Jinchi Lv (2008) Sure Independence Screening for Ultrahigh Dime
 (with discussion). \emph{Journal of Royal Statistical Society B}, \bold{70}, 849-911.
 
 Jianqing Fan and Rui Song (2010) Sure Independence Screening in Generalized Linear Models with NP-Dimensionality. 
-\emph{Journal of Royal Statistical Society B}, \bold{38}, 3567-3604.
+\emph{The Annals of Statistics}, \bold{38}, 3567-3604.
 
 Jianqing Fan, Richard Samworth, and Yichao Wu (2009) Ultrahigh Dimensional Feature Selection: Beyond the Linear
 Model. \emph{Journal of Machine Learning Research}, \bold{10}, 2013-2038.

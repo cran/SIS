@@ -1,4 +1,4 @@
 import(glmnet,ncvreg,survival)
-export(SIS, predict.SIS, print.SIS)
+export(SIS, predict.SIS, print.SIS, standardize)
 S3method("print", "SIS")
 S3method("predict", "SIS")

@@ -48,7 +48,7 @@ else{
              ix01 = rankcoef1$ix[1:iensure]
              ix02 = rankcoef2$ix[1:iensure]
              ix0 = sort(intersect(ix01,ix02))  
-          }           
+          }          
        }else{
            repeat{
               randcoef1 = margcoef(x[s1,], y[s1], family=family, null.model=TRUE, iterind=iterind)
