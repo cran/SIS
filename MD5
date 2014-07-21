@@ -1,4 +1,4 @@
-45525be0d6b013029912b6f4d3b552f4 *DESCRIPTION
+df851cbd98c38973a5565be949e41f5e *DESCRIPTION
 cb513963cd086f618e41f9cb31c726f3 *NAMESPACE
 b8212529be2a9ee2f180de8e5dd9024d *R/SIS.R
 c8c5c4d1783f4f37911f0f0642933824 *R/margcoef.R
@@ -8,7 +8,16 @@ cb035bd8e18398b1636c0af16d8463a5 *R/partialfits.R
 8dff7b40bdd100123b254085b4a925cc *R/print.SIS.R
 a5a3e614518d22a1fdafdfb00c897a3b *R/setsize.R
 a672d4d6a0a6a9c5cb41b58f968edea5 *R/standardize.R
+7aabddfb7a7743a70e4dc1e064f7116d *data/datalist
+7be9179c3dc14b5ce40bda6f3a6972c5 *data/leukemia.test.RData
+da92a32d48bb475e353c533bbd1ca398 *data/leukemia.train.RData
+f727afc0ac09e8cc6cec0abc78e9101e *data/prostate.test.RData
+103ce563b6dcaee76c33fc25ef6d7892 *data/prostate.train.RData
 136bd284e43ff39a0012d147b2d07d53 *man/SIS.Rd
+173905f30169a11a23d20c05aeb39798 *man/leukemia.test.Rd
+d1781965d10db3d37e6b083d04d24b9f *man/leukemia.train.Rd
 e48737dd43ef16063548bcd07d7c7f28 *man/predict.SIS.Rd
 b553aacb24391b6224991b497163f9ce *man/print.SIS.Rd
+ff9f32b5c4c8afd691227aab5c7841ff *man/prostate.test.Rd
+559a39fd58742d460d11d7d24eb9d823 *man/prostate.train.Rd
 d91fd89576dd8a7651f67ab1a9abc5b4 *man/standardize.Rd
