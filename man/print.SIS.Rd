@@ -66,4 +66,3 @@ print(model1, digits=3)
 print(model1, digits=7)
 }
 \keyword{models}
-\keyword{regression}

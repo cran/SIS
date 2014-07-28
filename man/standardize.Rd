@@ -39,4 +39,4 @@ x = x\%*\%cholmat
 
 x.standard = standardize(x)
 }
-\keyword{regression}
+\keyword{models}

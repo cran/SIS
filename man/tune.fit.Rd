@@ -1,0 +1,112 @@
+\name{tune.fit}
+\alias{tune.fit}
+\title{
+Using the \pkg{glmnet} and \pkg{ncvreg} packages, fits a Generalized Linear Model or Cox Proportional
+Hazards Model using various methods for choosing the regularization parameter \eqn{\lambda}
+}
+\description{
+ This function fits a generalized linear model or a Cox proportional hazards model via penalized
+ maximum likelihood, with available penalties as indicated in the \pkg{glmnet} and \pkg{ncvreg} 
+ packages. Instead of providing the whole regularization solution path, the function returns the
+ solution at a unique value of \eqn{\lambda}, the one optimizing the criterion specified in 
+ \code{tune}.
+}
+\usage{
+tune.fit(x, y, family = c("gaussian","binomial","poisson","cox"), 
+penalty=c("SCAD","MCP","lasso"), concavity.parameter = 
+switch(penalty, SCAD=3.7, 3), tune = c("cv","aic","bic","ebic"), 
+nfolds = 10, type.measure = c("deviance","class","auc","mse",
+"mae"), gamma.ebic = 1)
+}
+\arguments{
+  \item{x}{
+     The design matrix, of dimensions n * p, without an intercept. Each row is an observation vector.
+  }
+  \item{y}{
+     The response vector of dimension n * 1. Quantitative for \code{family="gaussian"}, non-negative 
+     counts for \code{family="poisson"}, binary (0-1) for \code{family="binomial"}. For 
+     \code{family="cox"}, \code{y} should be an object of class \code{Surv}, as provided by 
+     the function \code{Surv()} in the package \pkg{survival}.
+  }
+  \item{family}{
+    Response type (see above).
+  }
+  \item{penalty}{
+     The penalty to be applied in the regularized likelihood subproblems. "SCAD" (the default), "MCP", 
+     or "lasso" are provided.
+  }
+  \item{concavity.parameter}{
+     The tuning parameter used to adjust the concavity of the SCAD/MCP penalty. Default is 3.7 for 
+     SCAD and 3 for MCP.
+   }
+  \item{tune}{
+     Method for selecting the regularization parameter along the solution path of the penalized 
+     likelihood problem. Options to provide a final model include \code{tune="cv"}, \code{tune="aic"}, 
+     \code{tune="bic"}, and \code{tune="ebic"}. See references at the end for details.
+  }
+  \item{nfolds}{
+     Number of folds used in cross-validation. The default is 10.
+  }
+  \item{type.measure}{
+      Loss to use for cross-validation. Currently five options, not all available for all models. The 
+      default is \code{type.measure="deviance"}, which uses squared-error for gaussian models (also 
+      equivalent to \code{type.measure="mse"} in this case), deviance for logistic and poisson regression, 
+      and partial-likelihood for the Cox model. Both \code{type.measure="class"} and \code{type.measure="auc"} 
+      apply only to logistic regression and give misclassification error and area under the ROC curve, 
+      respectively. \code{type.measure="mse"} or \code{type.measure="mae"} (mean absolute error) can 
+      be used by all models except the \code{"cox"}; they measure the deviation from the fitted mean to 
+      the response. For \code{penalty="SCAD"} and \code{penalty="MCP"}, only \code{type.measure="deviance"} 
+      is available.
+  }
+  \item{gamma.ebic}{
+      Specifies the parameter in the Extended BIC criterion penalizing the size of the corresponding model 
+      space. The default is \code{gamma.ebic=1}. See references at the end for details.
+   }
+}
+\value{Returns an object with
+    \item{ix}{
+    The vector of indices of the nonzero coefficients selected by the maximum penalized likelihood 
+    procedure with \code{tune} as the method for choosing the regularization parameter.
+    }   
+    \item{a0}{
+    The intercept of the final model selected by \code{tune}.
+     } 
+    \item{fit}{
+    The vector of coefficients of the final model selected by \code{tune}.
+    }
+}
+\references{
+Jerome Friedman and Trevor Hastie and Rob Tibshirani (2010) Regularization Paths for Generalized Linear Models Via Coordinate Descent.
+\emph{Journal of Statistical Software}, \bold{33}(1), 1-22.
+
+Noah Simon and Jerome Friedman and Trevor Hastie and Rob Tibshirani (2011) Regularization Paths for Cox's Proportional Hazards Model Via Coordinate Descent.
+\emph{Journal of Statistical Software}, \bold{39}(5), 1-13.
+
+Patrick Breheny and Jian Huang (2011) Coordiante Descent Algorithms for Nonconvex Penalized Regression, with Applications to Biological Feature Selection.
+\emph{The Annals of Applied Statistics}, \bold{5}, 232-253.
+
+Hirotogu Akaike (1973) Information Theory and an Extension of the Maximum Likelihood Principle.
+In \emph{Proceedings of the 2nd International Symposium on Information Theory}, BN Petrov and F Csaki (eds.), 267-281.
+
+Gideon Schwarz (1978) Estimating the Dimension of a Model.
+\emph{The Annals of Statistics}, \bold{6}, 461-464.
+
+Jiahua Chen and Zehua Chen (2008) Extended Bayesian Information Criteria for Model Selection with Large Model Spaces.
+\emph{Biometrika}, \bold{95}, 759-771.
+}
+\author{Jianqing Fan, Yang Feng, Diego Franco Saldana, Richard Samworth, and Yichao Wu}
+\examples{
+
+set.seed(0)
+data("leukemia.train", package = "SIS")
+y.train = leukemia.train[,dim(leukemia.train)[2]]
+x.train = as.matrix(leukemia.train[,-dim(leukemia.train)[2]])
+x.train = standardize(x.train)
+model = tune.fit(x.train[,1:3500], y.train, family="binomial", tune="bic")
+model$ix
+model$a0
+model$fit
+
+}
+\keyword{models}
+

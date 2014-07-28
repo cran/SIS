@@ -2,7 +2,8 @@
 \alias{leukemia.test}
 \title{Gene expression Leukemia testing dataset from Golub et al. (1999)}
 \description{Gene expression testing data of 7129 genes from 34 patients 
-with acute leukemias from the microarray study of Golub et al. (1999).
+with acute leukemias (20 in class Acute Lymphoblastic Leukemia and 14 in 
+class Acute Myeloid Leukemia) from the microarray study of Golub et al. (1999).
 } 
 \usage{data(leukemia.test)}
 \format{A data frame with 34 observations on 7129 variables.}

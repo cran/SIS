@@ -26,9 +26,9 @@ greedy.size = 1, seed = 0, standardize = TRUE)
   }
   \item{y}{
      The response vector of dimension n * 1. Quantitative for \code{family="gaussian"}, non-negative 
-     counts for \code{family="poisson"}, binary (0-1) for \code{family=
-     "binomial"}. For \code{family="cox"}, \code{y} should be an object of class \code{Surv}, 
-     as provided by the function \code{Surv()} in the package \pkg{survival}.
+     counts for \code{family="poisson"}, binary (0-1) for \code{family="binomial"}. For 
+     \code{family="cox"}, \code{y} should be an object of class \code{Surv}, as provided by 
+     the function \code{Surv()} in the package \pkg{survival}.
   }
   \item{family}{
     Response type (see above).
@@ -55,10 +55,10 @@ greedy.size = 1, seed = 0, standardize = TRUE)
       equivalent to \code{type.measure="mse"} in this case), deviance for logistic and poisson regression, 
       and partial-likelihood for the Cox model. Both \code{type.measure="class"} and \code{type.measure="auc"} 
       apply only to logistic regression and give misclassification error and area under the ROC curve, 
-      respectively. \code{type.measure="mse"} or \code{type.measure=
-      "mae"} (mean absolute error) can be used by all models except the \code{"cox"}; they measure the 
-      deviation from the fitted mean to the response. For \code{penalty=
-      "SCAD"} and \code{penalty="MCP"}, only \code{type.measure="deviance"} is available.
+      respectively. \code{type.measure="mse"} or \code{type.measure="mae"} (mean absolute error) can 
+      be used by all models except the \code{"cox"}; they measure the deviation from the fitted mean to 
+      the response. For \code{penalty="SCAD"} and \code{penalty="MCP"}, only \code{type.measure="deviance"} 
+      is available.
   }
   \item{gamma.ebic}{
       Specifies the parameter in the Extended BIC criterion penalizing the size of the corresponding model 
@@ -217,5 +217,5 @@ model41$ix
 model42$ix
 
 }
-\keyword{file}
+\keyword{models}
 

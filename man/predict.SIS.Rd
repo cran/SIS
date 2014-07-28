@@ -125,4 +125,4 @@ predict(model4, testX, s=1:10, type="response")
 predict(model4, testX, s=1:10, type="link")
 
 }
-\keyword{file}
+\keyword{models}
