@@ -32,7 +32,7 @@ if(tune == "cv"){
      if (ncol(coef.beta) > 1) coef.beta =  coef.beta[,ind]
      else coef.beta =  coef.beta[ind]
 }  
-return(coef.beta)
+return(as.vector(coef.beta))
 }   
 
 final.fit<-function(x, y, family, penalty, concavity.parameter, tune, nfolds, type.measure, gamma.ebic){  
