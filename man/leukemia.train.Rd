@@ -1,6 +1,6 @@
 \name{leukemia.train}
 \alias{leukemia.train}
-\title{Gene expression Leukemia training dataset from Golub et al. (1999)}
+\title{Gene expression Leukemia training data set from Golub et al. (1999)}
 \description{Gene expression training data of 7129 genes from 38 patients 
 with acute leukemias (27 in class Acute Lymphoblastic Leukemia and 11 in 
 class Acute Myeloid Leukemia) from the microarray study of Golub et al. (1999).

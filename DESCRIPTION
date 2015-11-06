@@ -1,13 +1,13 @@
 Package: SIS
-Version: 0.7-5
-Date: 2015-03-15
+Version: 0.7-6
+Date: 2015-11-03
 Title: Sure Independence Screening
 Author: Jianqing Fan, Yang Feng,  Diego Franco Saldana, Richard Samworth,  Yichao Wu
 Maintainer: Diego Franco Saldana <diego@stat.columbia.edu>
 Depends: R (>= 3.1.1), glmnet, ncvreg, survival
 Description: Variable selection techniques are essential tools for model selection and estimation in high-dimensional statistical models. Through this publicly available package, we provide a unified environment to carry out variable selection using iterative sure independence screening (SIS) and all of its variants in generalized linear models and the Cox proportional hazards model.
 License: GPL-2
-Packaged: 2015-03-16 16:08:52 UTC; df2406
 NeedsCompilation: no
+Packaged: 2015-11-06 02:18:37 UTC; df2406
 Repository: CRAN
-Date/Publication: 2015-03-16 19:27:44
+Date/Publication: 2015-11-06 05:49:48

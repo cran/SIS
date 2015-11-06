@@ -1,4 +1,4 @@
-SIS <- function(x, y, family = c("gaussian","binomial","poisson","cox"), penalty=c("SCAD","MCP","lasso"), concavity.parameter = switch(penalty, SCAD=3.7, 3), tune = c("cv","aic","bic","ebic"), nfolds = 10, 
+SIS <- function(x, y, family = c("gaussian","binomial","poisson","cox"), penalty=c("SCAD","MCP","lasso"), concavity.parameter = switch(penalty, SCAD=3.7, 3), tune = c("bic","ebic","aic","cv"), nfolds = 10, 
                 type.measure = c("deviance","class","auc","mse","mae"), gamma.ebic = 1, nsis = NULL, iter = TRUE, iter.max = ifelse(greedy==FALSE, 10, floor(nrow(x)/log(nrow(x)))), 
                 varISIS = c("vanilla","aggr","cons"), perm = FALSE, q = 1, greedy = FALSE, greedy.size = 1, seed = 0, standardize = TRUE){
   

@@ -12,7 +12,7 @@ Proportional Hazards Models
 \usage{
 SIS(x, y, family = c("gaussian","binomial","poisson","cox"), 
 penalty=c("SCAD","MCP","lasso"), concavity.parameter = 
-switch(penalty, SCAD=3.7, 3), tune = c("cv","aic","bic","ebic"), 
+switch(penalty, SCAD=3.7, 3), tune = c("bic","ebic","aic","cv"), 
 nfolds = 10, type.measure = c("deviance","class","auc","mse",
 "mae"), gamma.ebic = 1, nsis = NULL, iter = TRUE, iter.max = 
 ifelse(greedy==FALSE,10,floor(nrow(x)/log(nrow(x)))), varISIS = 
@@ -43,8 +43,8 @@ greedy.size = 1, seed = 0, standardize = TRUE)
    }
   \item{tune}{
      Method for tuning the regularization parameter of the penalized likelihood subproblems and of the 
-     final model selected by (I)SIS. Options include \code{tune="cv"}, \code{tune="aic"}, \code{tune="bic"}, 
-     and \code{tune="ebic"}.
+     final model selected by (I)SIS. Options include \code{tune="bic"}, \code{tune="ebic"}, \code{tune="aic"}, 
+     and \code{tune="cv"}.
   }
   \item{nfolds}{
      Number of folds used in cross-validation. The default is 10.

@@ -21,6 +21,6 @@ else{
   if(family=="poisson"){nsis = floor(n/(2*log(n)))}
   if(family=="cox"){nsis = floor(n/(4*log(n)))}  
 }
-if(p < n) nsis = floor(p/3)
+if(p < n) nsis = p
 return(nsis)
 }

@@ -1,6 +1,6 @@
 \name{prostate.train}
 \alias{prostate.train}
-\title{Gene expression Prostate Cancer training dataset from Singh et al. (2002)}
+\title{Gene expression Prostate Cancer training data set from Singh et al. (2002)}
 \description{Gene expression training data of 12600 genes from 52 patients with 
 prostate tumors and 50 normal specimens from the microarray study of 
 Singh et al. (2002).

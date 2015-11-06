@@ -1,4 +1,5 @@
 import(glmnet,ncvreg,survival)
+importFrom("stats", "binomial", "coef", "cor", "deviance", "gaussian", "glm.fit", "poisson", "quantile")
 export(SIS, predict.SIS, print.SIS, standardize, tune.fit)
 S3method("print", "SIS")
 S3method("predict", "SIS")
