@@ -16,7 +16,8 @@
 #' Yichao Wu
 #' @references 
 #'Diego Franco Saldana and Yang Feng (2016) SIS: An R package for Sure Independence Screening in
-#' Ultrahigh Dimensional Statistical Models, \emph{Journal of Statistical Software}, to appear.#' @keywords models
+#' Ultrahigh Dimensional Statistical Models, \emph{Journal of Statistical Software}, to appear.
+#' @keywords models
 #' @examples
 #' 
 #' set.seed(0)
