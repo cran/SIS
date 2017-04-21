@@ -98,25 +98,12 @@
 #' b = c(0.6,0.6,0.6,-0.9*sqrt(2))
 #' myrates = exp(x[, 1:4]%*%b)
 #' y = rpois(n, myrates)
-#' model3=SIS(x, y, family='poisson', tune='bic', varISIS='aggr', seed=31)
+#' model3=SIS(x, y, family='poisson', penalty = 'lasso',tune='bic', varISIS='aggr', seed=31)
 #' 
 #' predict(model3, testX, type='response')
 #' predict(model3, testX, type='link')
 #' 
-#' 
-#' # Cox model
-#' set.seed(4)
-#' b = c(4,4,4,-6*sqrt(2),4/3)
-#' myrates = exp(x[, 1:5]%*%b)
-#' Sur = rexp(n,myrates); CT = rexp(n,0.1)
-#' Z = pmin(Sur,CT); ind = as.numeric(Sur<=CT)
-#' y = survival::Surv(Z,ind)
-#' model4=SIS(x, y, family='cox', penalty='lasso', tune='bic', 
-#'            varISIS='aggr', seed=41)
-#' 
-#' predict(model4, testX, type='response')
-#' predict(model4, testX, type='link')
-#' 
+#'
 #' 
 #' 
 predict.SIS <- function(object, newx, lambda = object$lambda, which = NULL, type = c("response", "link", "class"), ...) {
@@ -124,9 +111,9 @@ predict.SIS <- function(object, newx, lambda = object$lambda, which = NULL, type
     lambda = object$fit$lambda[which]
   }
   if (class(object$fit)[1] == "ncvreg") {
-    pred = predict(object$fit, newx, lambda = lambda, type = type) 
+    pred = predict(object$fit, newx[, object$ix0], lambda = lambda, type = type) 
   } else{
-    pred = predict(object$fit, newx, s = lambda, type = type) 
+    pred = predict(object$fit, newx[, object$ix0], s = lambda, type = type) 
   }
   return(pred)
 }

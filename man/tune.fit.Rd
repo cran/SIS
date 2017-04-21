@@ -88,10 +88,6 @@ model$beta
 
 
 }
-\author{
-Jianqing Fan, Yang Feng, Diego Franco Saldana, Richard Samworth, and
-Yichao Wu
-}
 \references{
 Jerome Friedman and Trevor Hastie and Rob Tibshirani (2010)
 Regularization Paths for Generalized Linear Models Via Coordinate Descent.
@@ -116,5 +112,8 @@ Jiahua Chen and Zehua Chen (2008) Extended Bayesian Information Criteria for
 Model Selection with Large Model Spaces. \emph{Biometrika}, \bold{95},
 759-771.
 }
+\author{
+Jianqing Fan, Yang Feng, Diego Franco Saldana, Richard Samworth, and
+Yichao Wu
+}
 \keyword{models}
-

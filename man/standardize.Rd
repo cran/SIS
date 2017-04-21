@@ -41,13 +41,12 @@ x = x\%*\%cholmat
 x.standard = standardize(x)
 
 }
-\author{
-Jianqing Fan, Yang Feng, Diego Franco Saldana, Richard Samworth, and
-Yichao Wu
-}
 \references{
 Diego Franco Saldana and Yang Feng (2016) SIS: An R package for Sure Independence Screening in
 Ultrahigh Dimensional Statistical Models, \emph{Journal of Statistical Software}, to appear.
 }
+\author{
+Jianqing Fan, Yang Feng, Diego Franco Saldana, Richard Samworth, and
+Yichao Wu
+}
 \keyword{models}
-

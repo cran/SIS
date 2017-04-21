@@ -8,6 +8,4 @@ in Ultrahigh Dimensional Statistical Models",
   journal = "Journal of Statistical Software",
   year = "2016",
   pages = "to appear",
-  number = "1",
-  textVersion = "Saldana, D. and Feng, Y. (2016) SIS: An R Package for Sure Independence Screening
-in Ultrahigh Dimensional Statistical Models. Journal of Statistical Software. To appear.")
+  textVersion = "Saldana, D. and Feng, Y. (2016) SIS: An R Package for Sure Independence Screening in Ultrahigh Dimensional Statistical Models. Journal of Statistical Software. To appear.")

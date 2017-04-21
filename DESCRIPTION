@@ -1,6 +1,6 @@
 Package: SIS
-Version: 0.8-3
-Date: 2016-10-11
+Version: 0.8-4
+Date: 2017-04-13
 Title: Sure Independence Screening
 Author: Jianqing Fan, Yang Feng, Diego Franco Saldana, Richard Samworth, Yichao
     Wu
@@ -15,8 +15,8 @@ Description: Variable selection techniques are essential tools for model
     model.
 URL: http://www.stat.columbia.edu/~yangfeng/pubs/jss1375.pdf
 License: GPL-2
-RoxygenNote: 5.0.1
+RoxygenNote: 6.0.1
 NeedsCompilation: no
-Packaged: 2016-10-12 00:37:16 UTC; yangfeng
+Packaged: 2017-04-21 17:36:59 UTC; yangfeng
 Repository: CRAN
-Date/Publication: 2016-10-12 09:00:48
+Date/Publication: 2017-04-21 18:48:10 UTC

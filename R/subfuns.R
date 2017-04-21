@@ -64,9 +64,13 @@ obtain.ix0 <- function(x, y, s1, s2, family, nsis, iter, varISIS, perm, q, greed
       rankcoef = sort(margcoef, decreasing = TRUE, index.return = TRUE)
       if (perm == FALSE) 
         ix0 = rankcoef$ix[1:floor((2/3) * nsis)] else {
+          count = 0
           repeat {
+            count = count + 1
             randcoef = margcoef(x, y, family = family, null.model = TRUE, iterind = iterind)
             if (length(which(margcoef >= quantile(randcoef, q))) > 0) 
+              break
+            if(count > 10)
               break
           }
           if (greedy == FALSE) {
@@ -102,19 +106,21 @@ obtain.ix0 <- function(x, y, s1, s2, family, nsis, iter, varISIS, perm, q, greed
             ix0 = int.size.k(rankcoef1$ix, rankcoef2$ix, 2)
         }
         if (varISIS == "cons") {
-          iensure = intensure(floor((2/3) * nsis), l1 = rankcoef1$ix, l2 = rankcoef2$ix, k = floor((2/3) * 
-                                                                                                     nsis))
+          iensure = intensure(floor((2/3) * nsis), l1 = rankcoef1$ix, l2 = rankcoef2$ix, k = floor((2/3) * nsis))
           ix01 = rankcoef1$ix[1:iensure]
           ix02 = rankcoef2$ix[1:iensure]
           ix0 = sort(intersect(ix01, ix02))
         }
       } else {
+        count = 0
         repeat {
+          count  = count + 1
           randcoef1 = margcoef(x[s1, ], y[s1], family = family, null.model = TRUE, iterind = iterind)
           randcoef2 = margcoef(x[s2, ], y[s2], family = family, null.model = TRUE, iterind = iterind)
           if (length(which(margcoef1 >= quantile(randcoef1, q))) > 0 && length(which(margcoef2 >= quantile(randcoef2, 
                                                                                                            q))) > 0) 
             break
+          if(count > 10) break
         }
         if (greedy == FALSE) {
           length1 = length(which(margcoef1 >= quantile(randcoef1, q)))
@@ -178,8 +184,7 @@ obtain.newix <- function(x, y, ix1, candind, s1, s2, family, pleft, varISIS, per
     } else {
       randcoef1 = margcoef(x[s1, ], y[s1], ix1, family = family, null.model = TRUE, iterind = iterind)
       randcoef2 = margcoef(x[s2, ], y[s2], ix1, family = family, null.model = TRUE, iterind = iterind)
-      if (length(which(margcoef1 >= quantile(randcoef1, q))) > 0 && length(which(margcoef2 >= quantile(randcoef2, 
-                                                                                                       q))) > 0) {
+      if (length(which(margcoef1 >= quantile(randcoef1, q))) > 0 && length(which(margcoef2 >= quantile(randcoef2,                                                                          q))) > 0) {
         if (greedy == FALSE) {
           length1 = length(which(margcoef1 >= quantile(randcoef1, q)))
           length2 = length(which(margcoef2 >= quantile(randcoef2, q)))
@@ -195,8 +200,9 @@ obtain.newix <- function(x, y, ix1, candind, s1, s2, family, pleft, varISIS, per
           length2 = length(which(margcoef2 >= quantile(randcoef2, q)))
           newix1 = candind[rankcoef1$ix[1:length1]]
           newix2 = candind[rankcoef2$ix[1:length2]]
-          iensure = intensure(greedy.size, l1 = newix1, l2 = newix2, k = greedy.size)
-          newix = sort(intersect(newix1[1:iensure], newix2[1:iensure]))
+          iensure = intensure(greedy.size, l1 = newix1, l2 = newix2, k = greedy.size) 
+          if(is.null(iensure)) newix = NULL
+          else newix = sort(intersect(newix1[1:iensure], newix2[1:iensure]))
         }
       } else newix = NULL
     }
@@ -206,8 +212,12 @@ obtain.newix <- function(x, y, ix1, candind, s1, s2, family, pleft, varISIS, per
 
 
 intensure <- function(i, l1, l2, k) {
-  if (length(intersect(l1[1:i], l2[1:i])) >= k) 
-    return(i) else return(intensure(i + 1, l1, l2, k))
+  for(j in i:length(l1)){
+    if (length(intersect(l1[1:j], l2[1:j])) >= k) 
+      return(j)
+  }
+ # if (length(intersect(l1[1:i], l2[1:i])) >= k) 
+#    return(i) else return(intensure(i + 1, l1, l2, k))
 }
 
 int.size.k <- function(l1, l2, k) {

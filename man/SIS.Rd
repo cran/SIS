@@ -163,9 +163,9 @@ set.seed(3)
 b = c(0.6,0.6,0.6,-0.9*sqrt(2))
 myrates = exp(x[, 1:4]\%*\%b)
 y = rpois(n, myrates)
-model31=SIS(x, y, family='poisson', tune='bic', perm=TRUE, q=0.9, 
+model31=SIS(x, y, family='poisson', penalty = 'lasso', tune='bic', perm=TRUE, q=0.9, 
             greedy=TRUE, seed=31)
-#model32=SIS(x, y, family='poisson', tune='bic', varISIS='aggr', 
+#model32=SIS(x, y, family='poisson', penalty = 'lasso',  tune='bic', varISIS='aggr', 
 #            perm=TRUE, q=0.9, seed=32)
 model31$ix
 #model32$ix
@@ -185,10 +185,6 @@ model31$ix
 #model42$ix
 
 
-}
-\author{
-Jianqing Fan, Yang Feng, Diego Franco Saldana, Richard Samworth, and
-Yichao Wu
 }
 \references{
 Diego Franco Saldana and Yang Feng (2016) SIS: An R package for Sure Independence Screening in
@@ -221,5 +217,8 @@ Model Selection with Large Model Spaces. \emph{Biometrika}, \bold{95},
 \seealso{
 \code{\link{predict.SIS}}
 }
+\author{
+Jianqing Fan, Yang Feng, Diego Franco Saldana, Richard Samworth, and
+Yichao Wu
+}
 \keyword{models}
-

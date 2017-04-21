@@ -84,31 +84,14 @@ set.seed(3)
 b = c(0.6,0.6,0.6,-0.9*sqrt(2))
 myrates = exp(x[, 1:4]\%*\%b)
 y = rpois(n, myrates)
-model3=SIS(x, y, family='poisson', tune='bic', varISIS='aggr', seed=31)
+model3=SIS(x, y, family='poisson', penalty = 'lasso',tune='bic', varISIS='aggr', seed=31)
 
 predict(model3, testX, type='response')
 predict(model3, testX, type='link')
 
 
-# Cox model
-set.seed(4)
-b = c(4,4,4,-6*sqrt(2),4/3)
-myrates = exp(x[, 1:5]\%*\%b)
-Sur = rexp(n,myrates); CT = rexp(n,0.1)
-Z = pmin(Sur,CT); ind = as.numeric(Sur<=CT)
-y = survival::Surv(Z,ind)
-model4=SIS(x, y, family='cox', penalty='lasso', tune='bic', 
-           varISIS='aggr', seed=41)
-
-predict(model4, testX, type='response')
-predict(model4, testX, type='link')
 
 
-
-}
-\author{
-Jianqing Fan, Yang Feng, Diego Franco Saldana, Richard Samworth, and
-Yichao Wu
 }
 \references{
 Diego Franco Saldana and Yang Feng (2016) SIS: An R package for Sure Independence Screening in
@@ -140,5 +123,8 @@ Ultrahigh Dimensional Statistical Models, \emph{Journal of Statistical Software}
 \seealso{
 \code{\link{SIS}}
 }
+\author{
+Jianqing Fan, Yang Feng, Diego Franco Saldana, Richard Samworth, and
+Yichao Wu
+}
 \keyword{models}
-

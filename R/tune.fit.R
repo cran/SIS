@@ -108,7 +108,7 @@ tune.fit <- function(x, y, family = c("gaussian", "binomial", "poisson", "cox"),
     
     
     if (tune == "cv") {
-        if (penalty == "lasso") {
+        if (penalty == "lasso" ) {
             cv.fit = cv.glmnet(x, y, family = family, type.measure = type.measure, nfolds = nfolds)
             coef.beta = coef(cv.fit, s = "lambda.1se") 
             reg.fit = cv.fit$glmnet.fit
@@ -125,7 +125,7 @@ tune.fit <- function(x, y, family = c("gaussian", "binomial", "poisson", "cox"),
         }
     } else {
         n = nrow(x)
-        if (penalty == "lasso") {
+        if (penalty == "lasso" ) {
             reg.fit = glmnet(x, y, family = family)
             coef.beta = rbind(reg.fit$a0,as.matrix(reg.fit$beta))  # extract coefficients at all values of lambda,  including the intercept
             dev = deviance(reg.fit)
@@ -134,7 +134,7 @@ tune.fit <- function(x, y, family = c("gaussian", "binomial", "poisson", "cox"),
             reg.fit = ncvreg(x, y, family = family, penalty = penalty, gamma = concavity.parameter)
             coef.beta = reg.fit$beta  # extract coefficients at all values of lambda, including the intercept
             dev = loglik(x, y, coef.beta, family = family)
-            reg.df = getdf(coef.beta[-1,])
+            reg.df = getdf(coef.beta[-1, , drop = FALSE])
         }
         if (tune == "aic") {
             obj = dev + 2 * reg.df

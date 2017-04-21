@@ -176,9 +176,9 @@
 #' b = c(0.6,0.6,0.6,-0.9*sqrt(2))
 #' myrates = exp(x[, 1:4]%*%b)
 #' y = rpois(n, myrates)
-#' model31=SIS(x, y, family='poisson', tune='bic', perm=TRUE, q=0.9, 
+#' model31=SIS(x, y, family='poisson', penalty = 'lasso', tune='bic', perm=TRUE, q=0.9, 
 #'             greedy=TRUE, seed=31)
-#' #model32=SIS(x, y, family='poisson', tune='bic', varISIS='aggr', 
+#' #model32=SIS(x, y, family='poisson', penalty = 'lasso',  tune='bic', varISIS='aggr', 
 #' #            perm=TRUE, q=0.9, seed=32)
 #' model31$ix
 #' #model32$ix
@@ -269,9 +269,14 @@ sisglm <- function(x, y, family, penalty, concavity.parameter, tune, nfolds, typ
         repeat {
             iterind = iterind + 1
             cat("Iter", iterind, ", screening: ", ix0, "\n")
+            if(length(ix0) == 1 & penalty == 'lasso'){
+              ix0 = c(ix0, p+1-ix0)
+            }
+            pen.ind = ix0
             selection.fit = tune.fit(old.x[,ix0,drop = FALSE], y, family , penalty , concavity.parameter, tune, nfolds , type.measure , gamma.ebic)
             coef.beta = selection.fit$beta
             a0 = selection.fit$a0
+            
             lambda  = selection.fit$lambda
             lambda.ind = selection.fit$lambda.ind
             ix1 = sort(ix0[selection.fit$ix])
@@ -281,19 +286,14 @@ sisglm <- function(x, y, family, penalty, concavity.parameter, tune, nfolds, typ
                 s1 = split.sample[1:ceiling(n/2)]
                 s2 = setdiff(split.sample, s1)
                 cat("Sample splitting attempt: ", split.tries, "\n")
-                if (split.tries == 20) {
-                  varISIS = "vanilla"
-                  perm = TRUE
-                  greedy = FALSE
-                  tune = "cv"
+                if (split.tries >= 20) {
                   cat("No variables remaining after ", split.tries, " sample splitting attempts! \n")
-                  cat("Trying a more conservative variable screening approach with a data-driven threshold for marginal screening! \n")
-                  return(sisglm(old.x, y, family, penalty, concavity.parameter, tune, nfolds, type.measure, gamma.ebic, 
-                    nsis, iter, iter.max, varISIS, perm, q, greedy, greedy.size, seed, standardize, s1 = NULL, 
-                    s2 = NULL))
-                } else return(sisglm(old.x, y, family, penalty, concavity.parameter, tune, nfolds, type.measure, gamma.ebic, 
+                  cat("You can try a more conservative variable screening approach! \n")
+                } else return(sisglm(old.x, y, family, penalty, concavity.parameter, tune, nfolds, type.measure, gamma.ebic,
                   nsis, iter, iter.max, varISIS, perm, q, greedy, greedy.size, seed, standardize, s1, s2, split.tries))
             }
+          
+            
             cat("Iter", iterind, ", selection: ", ix1, "\n")
             if (length(ix1) >= nsis || iterind >= iter.max) {
                 ix0 = ix1
@@ -328,13 +328,18 @@ sisglm <- function(x, y, family, penalty, concavity.parameter, tune, nfolds, typ
                flag.models = 1
             }
             ix0 = ix1
+            if(length(ix1) == 0) break
         }  # end repeat
         
     } else {
         # end if(iter==TRUE)
         ix0 = sort(obtain.ix0(x = x, y = y, s1 = s1, s2 = s2, family = family, nsis = nsis, iter = iter, varISIS = varISIS, 
             perm = perm, q = q, greedy = greedy, greedy.size = greedy.size, iterind = iterind))
-        selection.fit = tune.fit(old.x[,ix0,drop = FALSE], y, family , penalty , concavity.parameter, tune, nfolds , type.measure , gamma.ebic)
+        if(length(ix0) == 1 & penalty == 'lasso'){
+          ix0 = c(ix0, p+1-ix0)
+        }
+        pen.ind = ix0
+        selection.fit = tune.fit(old.x[, ix0, drop = FALSE], y, family , penalty , concavity.parameter, tune, nfolds , type.measure , gamma.ebic)
         coef.beta = selection.fit$beta
         a0 = selection.fit$a0
         lambda = selection.fit$lambda
@@ -345,11 +350,15 @@ sisglm <- function(x, y, family, penalty, concavity.parameter, tune, nfolds, typ
     
     
     if (family == "cox") {
+      if (length(ix1) > 0){
       names(coef.beta) = paste("X", ix1, sep = "") 
+      }
     }  else {
-      coef.beta = c(a0, coef.beta)
-      names(coef.beta) = c("(Intercept)", paste("X", ix1, sep = ""))
+      coef.beta = c(a0, coef.beta) 
+      if(length(ix1)>0){
+        names(coef.beta) = c("(Intercept)", paste("X", ix1, sep = ""))
+      }
     }
     
-    return(list(ix = ix1, coef.est = coef.beta, fit = selection.fit$fit, lambda = lambda, lambda.ind = lambda.ind))
+    return(list(ix = ix1, coef.est = coef.beta, fit = selection.fit$fit, lambda = lambda, lambda.ind = lambda.ind, ix0 = pen.ind))
 }
