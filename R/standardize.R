@@ -15,8 +15,8 @@
 #' @author Jianqing Fan, Yang Feng, Diego Franco Saldana, Richard Samworth, and
 #' Yichao Wu
 #' @references 
-#'Diego Franco Saldana and Yang Feng (2016) SIS: An R package for Sure Independence Screening in
-#' Ultrahigh Dimensional Statistical Models, \emph{Journal of Statistical Software}, to appear.
+#' Diego Franco Saldana and Yang Feng (2018) SIS: An R package for Sure Independence Screening in
+#' Ultrahigh Dimensional Statistical Models, \emph{Journal of Statistical Software}, \bold{83}, 2, 1-25.
 #' @keywords models
 #' @examples
 #' 

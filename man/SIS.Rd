@@ -149,6 +149,7 @@ model12=SIS(x, y, family='gaussian', tune='bic', varISIS='aggr', seed=11)
 model11$ix
 model12$ix
 
+\dontrun{
 # binary response 
 set.seed(2)
 feta = x[, 1:5]\%*\%b; fprob = exp(feta)/(1+exp(feta))
@@ -165,30 +166,30 @@ myrates = exp(x[, 1:4]\%*\%b)
 y = rpois(n, myrates)
 model31=SIS(x, y, family='poisson', penalty = 'lasso', tune='bic', perm=TRUE, q=0.9, 
             greedy=TRUE, seed=31)
-#model32=SIS(x, y, family='poisson', penalty = 'lasso',  tune='bic', varISIS='aggr', 
-#            perm=TRUE, q=0.9, seed=32)
+model32=SIS(x, y, family='poisson', penalty = 'lasso',  tune='bic', varISIS='aggr', 
+            perm=TRUE, q=0.9, seed=32)
 model31$ix
-#model32$ix
+model32$ix
 
 # Cox model
-#set.seed(4)
-#b = c(4,4,4,-6*sqrt(2),4/3)
-#myrates = exp(x[, 1:5]\%*\%b)
-#Sur = rexp(n,myrates); CT = rexp(n,0.1)
-#Z = pmin(Sur,CT); ind = as.numeric(Sur<=CT)
-#y = survival::Surv(Z,ind)
-#model41=SIS(x, y, family='cox', penalty='lasso', tune='bic', 
-#           varISIS='aggr', seed=41)
-#model42=SIS(x, y, family='cox', penalty='lasso', tune='bic', 
-#             varISIS='cons', seed=41)
-#model41$ix
-#model42$ix
-
+set.seed(4)
+b = c(4,4,4,-6*sqrt(2),4/3)
+myrates = exp(x[, 1:5]\%*\%b)
+Sur = rexp(n,myrates); CT = rexp(n,0.1)
+Z = pmin(Sur,CT); ind = as.numeric(Sur<=CT)
+y = survival::Surv(Z,ind)
+model41=SIS(x, y, family='cox', penalty='lasso', tune='bic', 
+           varISIS='aggr', seed=41)
+model42=SIS(x, y, family='cox', penalty='lasso', tune='bic', 
+             varISIS='cons', seed=41)
+model41$ix
+model42$ix
+}
 
 }
 \references{
-Diego Franco Saldana and Yang Feng (2016) SIS: An R package for Sure Independence Screening in
-Ultrahigh Dimensional Statistical Models, \emph{Journal of Statistical Software}, to appear.
+Diego Franco Saldana and Yang Feng (2018) SIS: An R package for Sure Independence Screening in
+Ultrahigh Dimensional Statistical Models, \emph{Journal of Statistical Software}, \bold{83}, 2, 1-25.
 
 Jianqing Fan and Jinchi Lv (2008) Sure Independence Screening
 for Ultrahigh Dimensional Feature Space (with discussion). \emph{Journal of

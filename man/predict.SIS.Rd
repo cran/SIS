@@ -65,6 +65,7 @@ model1=SIS(x, y, family='gaussian', tune='bic', varISIS='aggr', seed=11)
 predict(model1, testX, type='response')
 predict(model1, testX, which=1:10, type='response')
 
+\dontrun{
 # binary response 
 set.seed(2)
 feta = x[, 1:5]\%*\%b; fprob = exp(feta)/(1+exp(feta))
@@ -88,14 +89,14 @@ model3=SIS(x, y, family='poisson', penalty = 'lasso',tune='bic', varISIS='aggr',
 
 predict(model3, testX, type='response')
 predict(model3, testX, type='link')
-
+}
 
 
 
 }
 \references{
-Diego Franco Saldana and Yang Feng (2016) SIS: An R package for Sure Independence Screening in
-Ultrahigh Dimensional Statistical Models, \emph{Journal of Statistical Software}, to appear.
+Diego Franco Saldana and Yang Feng (2018) SIS: An R package for Sure Independence Screening in
+Ultrahigh Dimensional Statistical Models, \emph{Journal of Statistical Software}, \bold{83}, 2, 1-25.
 
 Jianqing Fan and Jinchi Lv (2008) Sure Independence Screening
 for Ultrahigh Dimensional Feature Space (with discussion). \emph{Journal of
