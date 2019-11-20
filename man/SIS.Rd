@@ -12,7 +12,7 @@ SIS(x, y, family = c("gaussian", "binomial", "poisson", "cox"),
   gamma.ebic = 1, nsis = NULL, iter = TRUE, iter.max = ifelse(greedy ==
   FALSE, 10, floor(nrow(x)/log(nrow(x)))), varISIS = c("vanilla", "aggr",
   "cons"), perm = FALSE, q = 1, greedy = FALSE, greedy.size = 1,
-  seed = 0, standardize = TRUE)
+  seed = NULL, standardize = TRUE)
 }
 \arguments{
 \item{x}{The design matrix, of dimensions n * p, without an intercept. Each
@@ -97,7 +97,7 @@ modification of the permutation-based ISIS. The default is
 \code{greedy.size=1}.}
 
 \item{seed}{Random seed used for sample splitting, random permutation, and
-cross- validation sampling of training and test sets.}
+cross-validation sampling of training and test sets.}
 
 \item{standardize}{Logical flag for x variable standardization, prior to
 performing (iterative) variable screening.  The resulting coefficients are
@@ -106,8 +106,9 @@ If variables are in the same units already, you might not wish to
 standardize.}
 }
 \value{
-Returns an object with \item{ix}{ The vector of indices selected by
-(I)SIS.  } \item{coef.est}{ The vector of coefficients of the final model
+Returns an object with \item{sis.ix0}{The vector of indices selected by
+only SIS.} \item{ix}{ The vector of indices selected by
+(I)SIS with regularization step.  } \item{coef.est}{ The vector of coefficients of the final model
 selected by (I)SIS.  } \item{fit}{ A fitted object of type \code{ncvreg},
 \code{cv.ncvreg}, \code{glmnet}, or \code{cv.glmnet} for the final model
 selected by the (I)SIS procedure. If \code{tune='cv'}, the returned fitted
@@ -144,6 +145,10 @@ x = x\%*\%cholmat
 set.seed(1)
 b = c(4,4,4,-6*sqrt(2),4/3)
 y=x[, 1:5]\%*\%b + rnorm(n)
+# SIS without regularization
+model10 = SIS(x, y, family='gaussian', iter = FALSE)
+model10$sis.ix0
+# ISIS with regularization
 model11=SIS(x, y, family='gaussian', tune='bic')
 model12=SIS(x, y, family='gaussian', tune='bic', varISIS='aggr', seed=11)
 model11$ix

@@ -89,14 +89,15 @@
 #' modification of the permutation-based ISIS. The default is
 #' \code{greedy.size=1}.
 #' @param seed Random seed used for sample splitting, random permutation, and
-#' cross- validation sampling of training and test sets.
+#' cross-validation sampling of training and test sets.
 #' @param standardize Logical flag for x variable standardization, prior to
 #' performing (iterative) variable screening.  The resulting coefficients are
 #' always returned on the original scale. Default is \code{standardize=TRUE}.
 #' If variables are in the same units already, you might not wish to
 #' standardize.
-#' @return Returns an object with \item{ix}{ The vector of indices selected by
-#' (I)SIS.  } \item{coef.est}{ The vector of coefficients of the final model
+#' @return Returns an object with \item{sis.ix0}{The vector of indices selected by
+#' only SIS.} \item{ix}{ The vector of indices selected by
+#' (I)SIS with regularization step.  } \item{coef.est}{ The vector of coefficients of the final model
 #' selected by (I)SIS.  } \item{fit}{ A fitted object of type \code{ncvreg},
 #' \code{cv.ncvreg}, \code{glmnet}, or \code{cv.glmnet} for the final model
 #' selected by the (I)SIS procedure. If \code{tune='cv'}, the returned fitted
@@ -157,6 +158,10 @@
 #' set.seed(1)
 #' b = c(4,4,4,-6*sqrt(2),4/3)
 #' y=x[, 1:5]%*%b + rnorm(n)
+#' # SIS without regularization
+#' model10 = SIS(x, y, family='gaussian', iter = FALSE)
+#' model10$sis.ix0
+#' # ISIS with regularization
 #' model11=SIS(x, y, family='gaussian', tune='bic')
 #' model12=SIS(x, y, family='gaussian', tune='bic', varISIS='aggr', seed=11)
 #' model11$ix
@@ -203,7 +208,7 @@ SIS <- function(x, y, family = c("gaussian", "binomial", "poisson", "cox"), pena
     concavity.parameter = switch(penalty, SCAD = 3.7, 3), tune = c("bic", "ebic", "aic", "cv"), nfolds = 10, 
     type.measure = c("deviance", "class", "auc", "mse", "mae"), gamma.ebic = 1, nsis = NULL, iter = TRUE, iter.max = ifelse(greedy == 
         FALSE, 10, floor(nrow(x)/log(nrow(x)))), varISIS = c("vanilla", "aggr", "cons"), perm = FALSE, q = 1, 
-    greedy = FALSE, greedy.size = 1, seed = 0, standardize = TRUE) {
+    greedy = FALSE, greedy.size = 1, seed = NULL, standardize = TRUE) {
     
     this.call = match.call()
     family = match.arg(family)
@@ -218,7 +223,7 @@ SIS <- function(x, y, family = c("gaussian", "binomial", "poisson", "cox"), pena
         stop("concavity.parameter must be numeric!")
     if (class(nfolds) != "numeric") 
         stop("nfolds must be numeric!")
-    if (class(seed) != "numeric") 
+    if (!is.null(seed) &  class(seed) != "numeric") 
         stop("seed must be numeric!")
     
     if (family == "cox" && penalty %in% c("SCAD", "MCP")) 
@@ -253,7 +258,9 @@ sisglm <- function(x, y, family, penalty, concavity.parameter, tune, nfolds, typ
     if (is.null(nsis) == TRUE) 
         nsis = calculate.nsis(family = family, varISIS = varISIS, n = n, p = p)
     if (is.null(s1) == TRUE) {
-        set.seed(seed)
+        if(!is.null(seed)){
+          set.seed(seed)
+        }
         split.sample = sample(1:n)
         s1 = split.sample[1:ceiling(n/2)]
         s2 = setdiff(split.sample, s1)
@@ -267,6 +274,7 @@ sisglm <- function(x, y, family, penalty, concavity.parameter, tune, nfolds, typ
     if (iter == TRUE) {
         ix0 = sort(obtain.ix0(x = x, y = y, s1 = s1, s2 = s2, family = family, nsis = nsis, iter = iter, varISIS = varISIS, 
             perm = perm, q = q, greedy = greedy, greedy.size = greedy.size, iterind = iterind))
+        sis.ix0 = ix0
         repeat {
             iterind = iterind + 1
             cat("Iter", iterind, ", screening: ", ix0, "\n")
@@ -336,6 +344,7 @@ sisglm <- function(x, y, family, penalty, concavity.parameter, tune, nfolds, typ
         # end if(iter==TRUE)
         ix0 = sort(obtain.ix0(x = x, y = y, s1 = s1, s2 = s2, family = family, nsis = nsis, iter = iter, varISIS = varISIS, 
             perm = perm, q = q, greedy = greedy, greedy.size = greedy.size, iterind = iterind))
+        sis.ix0 = ix0
         if(length(ix0) == 1 & penalty == 'lasso'){
           ix0 = c(ix0, p+1-ix0)
         }
@@ -361,5 +370,5 @@ sisglm <- function(x, y, family, penalty, concavity.parameter, tune, nfolds, typ
       }
     }
     
-    return(list(ix = ix1, coef.est = coef.beta, fit = selection.fit$fit, lambda = lambda, lambda.ind = lambda.ind, ix0 = pen.ind))
+    return(list(sis.ix0 = sis.ix0, ix = ix1, coef.est = coef.beta, fit = selection.fit$fit, lambda = lambda, lambda.ind = lambda.ind, ix0 = pen.ind))
 }
