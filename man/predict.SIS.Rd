@@ -4,8 +4,14 @@
 \alias{predict.SIS}
 \title{Model prediction based on a fitted SIS object.}
 \usage{
-\method{predict}{SIS}(object, newx, lambda = object$lambda, which = NULL,
-  type = c("response", "link", "class"), ...)
+\method{predict}{SIS}(
+  object,
+  newx,
+  lambda = object$lambda,
+  which = NULL,
+  type = c("response", "link", "class"),
+  ...
+)
 }
 \arguments{
 \item{object}{Fitted \code{'SIS'} model object.}

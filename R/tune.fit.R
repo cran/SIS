@@ -9,6 +9,8 @@
 #' solution at a unique value of \eqn{\lambda}, the one optimizing the
 #' criterion specified in \code{tune}.
 #' 
+#' @importFrom ncvreg ncvsurv
+#' @importFrom ncvreg cv.ncvsurv
 #' @export
 #' @param x The design matrix, of dimensions n * p, without an intercept. Each
 #' row is an observation vector.
@@ -114,7 +116,7 @@ tune.fit <- function(x, y, family = c("gaussian", "binomial", "poisson", "cox"),
             reg.fit = cv.fit$glmnet.fit
             lambda = cv.fit$lambda.1se
             lambda.ind = which(cv.fit$lambda == cv.fit$lambda.1se)
-        } else {
+        } else if (family != 'cox') {
             cv.fit = cv.ncvreg(x, y, family = family, penalty = penalty, gamma = concavity.parameter, nfolds = nfolds)
             cv.1se.ind = min(which(cv.fit$cve<cv.fit$cve[ cv.fit$min]+cv.fit$cvse[ cv.fit$min]))
             coef.beta = cv.fit$fit$beta[, cv.1se.ind]  # extract coefficients at a single value of lambda, including the intercept
@@ -122,6 +124,14 @@ tune.fit <- function(x, y, family = c("gaussian", "binomial", "poisson", "cox"),
             
             lambda = cv.fit$lambda[cv.1se.ind]
             lambda.ind = cv.1se.ind
+        } else {
+          cv.fit = cv.ncvsurv(x, y, family = family, penalty = penalty, gamma = concavity.parameter, nfolds = nfolds)
+          cv.1se.ind = min(which(cv.fit$cve<cv.fit$cve[ cv.fit$min]+cv.fit$cvse[ cv.fit$min]))
+          coef.beta = cv.fit$fit$beta[, cv.1se.ind]  # extract coefficients at a single value of lambda
+          reg.fit = cv.fit$fit
+          
+          lambda = cv.fit$lambda[cv.1se.ind]
+          lambda.ind = cv.1se.ind
         }
     } else {
         n = nrow(x)
@@ -131,11 +141,20 @@ tune.fit <- function(x, y, family = c("gaussian", "binomial", "poisson", "cox"),
             dev = deviance(reg.fit)
             reg.df = reg.fit$df
         } else {
+          if(family != 'cox'){
+            
             reg.fit = ncvreg(x, y, family = family, penalty = penalty, gamma = concavity.parameter)
             coef.beta = reg.fit$beta  # extract coefficients at all values of lambda, including the intercept
             dev = loglik(x, y, coef.beta, family = family)
             reg.df = getdf(coef.beta[-1, , drop = FALSE])
+        } else {
+          reg.fit = ncvsurv(x, y, family = family, penalty = penalty, gamma = concavity.parameter)
+          coef.beta = reg.fit$beta  # extract coefficients at all values of lambda, including the intercept
+          dev = 2*reg.fit$loss
+          reg.df = getdf(coef.beta)
         }
+        }
+          
         if (tune == "aic") {
             obj = dev + 2 * reg.df
         }

@@ -6,11 +6,17 @@
 Model or Cox Proportional Hazards Model using various methods for choosing
 the regularization parameter \eqn{\lambda}}
 \usage{
-tune.fit(x, y, family = c("gaussian", "binomial", "poisson", "cox"),
-  penalty = c("SCAD", "MCP", "lasso"), concavity.parameter = switch(penalty,
-  SCAD = 3.7, 3), tune = c("cv", "aic", "bic", "ebic"), nfolds = 10,
+tune.fit(
+  x,
+  y,
+  family = c("gaussian", "binomial", "poisson", "cox"),
+  penalty = c("SCAD", "MCP", "lasso"),
+  concavity.parameter = switch(penalty, SCAD = 3.7, 3),
+  tune = c("cv", "aic", "bic", "ebic"),
+  nfolds = 10,
   type.measure = c("deviance", "class", "auc", "mse", "mae"),
-  gamma.ebic = 1)
+  gamma.ebic = 1
+)
 }
 \arguments{
 \item{x}{The design matrix, of dimensions n * p, without an intercept. Each

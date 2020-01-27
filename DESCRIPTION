@@ -1,8 +1,8 @@
 Package: SIS
-Version: 0.8-7
-Date: 2019-11-19
+Version: 0.8-8
+Date: 2020-01-27
 Title: Sure Independence Screening
-Authors@R: c(person("Yang", "Feng", email = "yang.feng@nyu.edu",
+Authors@R: c(person("Yang", "Feng", email = "yangfengstat@gmail.com",
   role = c("aut", "cre")),person("Jianqing", "Fan", email = "jqfan@princeton.edu",
   role = c("aut")),person("Diego", "Franco Saldana", email = "diegofrasal@gmail.com",
   role = c("aut")),person("Yichao", "Wu", email = "yichaowu@uic.edu",
@@ -17,14 +17,14 @@ Description: Variable selection techniques are essential tools for model
     of its variants in generalized linear models (Fan and Song (2009)<doi:10.1214/10-AOS798>) and the Cox proportional hazards
     model (Fan, Feng and Wu (2010)<doi:10.1214/10-IMSCOLL606>).
 License: GPL-2
-RoxygenNote: 6.0.1
+RoxygenNote: 7.0.2
 NeedsCompilation: no
-Packaged: 2019-11-19 22:11:22 UTC; yangfeng
+Packaged: 2020-01-27 16:03:49 UTC; yangfeng
 Author: Yang Feng [aut, cre],
   Jianqing Fan [aut],
   Diego Franco Saldana [aut],
   Yichao Wu [aut],
   Richard Samworth [aut]
-Maintainer: Yang Feng <yang.feng@nyu.edu>
+Maintainer: Yang Feng <yangfengstat@gmail.com>
 Repository: CRAN
-Date/Publication: 2019-11-20 08:50:10 UTC
+Date/Publication: 2020-01-27 17:10:07 UTC
