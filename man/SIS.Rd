@@ -8,8 +8,8 @@ Linear Models and Cox's Proportional Hazards Models}
 SIS(
   x,
   y,
-  family = c("gaussian", "binomial", "poisson", "cox"),
-  penalty = c("SCAD", "MCP", "lasso"),
+  family = c("gaussian", "binomial", "poisson", "cox", "multinom"),
+  penalty = c("SCAD", "MCP", "lasso", "enet", "aenet", "msaenet"),
   concavity.parameter = switch(penalty, SCAD = 3.7, 3),
   tune = c("bic", "ebic", "aic", "cv"),
   nfolds = 10,
@@ -24,7 +24,10 @@ SIS(
   greedy = FALSE,
   greedy.size = 1,
   seed = NULL,
-  standardize = TRUE
+  standardize = TRUE,
+  covars = NULL,
+  boot_ci = FALSE,
+  parallel = TRUE
 )
 }
 \arguments{
@@ -34,14 +37,15 @@ an intercept by default.}
 
 \item{y}{The response vector of dimension n * 1. Quantitative for
 \code{family='gaussian'}, non-negative counts for \code{family='poisson'},
-binary (0-1) for \code{family='binomial'}. For \code{family='cox'}, \code{y}
-should be an object of class \code{Surv}, as provided by the function
-\code{Surv()} in the package \pkg{survival}.}
+binary (0-1) for \code{family='binomial'}, factor for \code{family='multinom'}.
+For \code{family='cox'}, \code{y} should be an object of class \code{Surv}, 
+as provided by the function \code{Surv()} in the package \pkg{survival}.}
 
 \item{family}{Response type (see above).}
 
 \item{penalty}{The penalty to be applied in the regularized likelihood
-subproblems. 'SCAD' (the default), 'MCP', or 'lasso' are provided.}
+subproblems. 'SCAD', 'MCP', or 'lasso' are provided. 'lasso' is the default
+for family = 'multinom' or 'cox', 'SCAD' is the default for other families.}
 
 \item{concavity.parameter}{The tuning parameter used to adjust the concavity
 of the SCAD/MCP penalty. Default is 3.7 for SCAD and 3 for MCP.}
@@ -90,7 +94,7 @@ calculated by first decoupling the predictors \eqn{x_i} and response
 \eqn{y_i} through a random permutation \eqn{\pi} of \eqn{(1,...,n)} to form
 a null model.  For this newly permuted data, marginal regression
 coefficients for each predictor are recalculated.  As the marginal
-regression coeffcients of the original data should be larger than most
+regression coefficients of the original data should be larger than most
 recalculated coefficients in the null model, the data-driven threshold is
 given by the \eqn{q}th quantile of the null coefficients. This data-driven
 threshold only allows a \eqn{1-q} proportion of inactive variables to enter
@@ -117,91 +121,133 @@ performing (iterative) variable screening.  The resulting coefficients are
 always returned on the original scale. Default is \code{standardize=TRUE}.
 If variables are in the same units already, you might not wish to
 standardize.}
+
+\item{covars}{Names of the factor variables.}
+
+\item{boot_ci}{Logical flag for computing bootstrap confidence intervals. Default = FALSE.}
+
+\item{parallel}{Specifies whether to conduct parallel computing}
 }
 \value{
-Returns an object with \item{sis.ix0}{The vector of indices selected by
-only SIS.} \item{ix}{ The vector of indices selected by
-(I)SIS with regularization step.  } \item{coef.est}{ The vector of coefficients of the final model
-selected by (I)SIS.  } \item{fit}{ A fitted object of type \code{ncvreg},
-\code{cv.ncvreg}, \code{glmnet}, or \code{cv.glmnet} for the final model
-selected by the (I)SIS procedure. If \code{tune='cv'}, the returned fitted
-object is of type \code{cv.ncvreg} if \code{penalty='SCAD'} or
-\code{penalty='MCP'}; otherwise, the returned fitted object is of type
-\code{cv.glmnet}. For the remaining options of \code{tune}, the returned
-object is of type \code{glmnet} if \code{penalty='lasso'}, and \code{ncvreg}
-otherwise.  } \item{path.index}{ The index along the solution path of
-\code{fit} for which the criterion specified in \code{tune} is minimized.  }
+A list with components:
+\describe{
+  \item{sis.ix0}{The vector of indices selected by only SIS.}
+  \item{ix}{The vector of indices selected by (I)SIS with the regularization step.}
+  \item{coef.est}{The vector of coefficients of the final model selected by (I)SIS.}
+  \item{fit}{A fitted object of type \code{ncvreg}, \code{cv.ncvreg},
+  \code{glmnet}, or \code{cv.glmnet} for the final model selected by the
+  (I)SIS procedure. If \code{tune='cv'}, the returned fitted object is of
+  type \code{cv.ncvreg} if \code{penalty='SCAD'} or \code{penalty='MCP'};
+  otherwise, the returned fitted object is of type \code{cv.glmnet}. For
+  the remaining options of \code{tune}, the returned object is of type
+  \code{glmnet} if \code{penalty='lasso'}, and \code{ncvreg} otherwise.}
+  \item{path.index}{The index along the solution path of \code{fit} for
+  which the criterion specified in \code{tune} is minimized.}
+  \item{ix0}{The vector of indices ordered by decreasing importance.}
+  \item{ix_list}{The list of vectors of indices ordered by decreasing
+  importance, for each screening step.}
+  \item{cis}{A data frame with columns \code{coef}, \code{CI_low},
+  \code{CI_up}, \code{Est}, \code{CI_low_perc}, and \code{CI_up_perc}.}
+}
 }
 \description{
 This function first implements the Iterative Sure Independence Screening for
 different variants of (I)SIS, and then fits the final regression model using
-the R packages \pkg{ncvreg} and \pkg{glmnet} for the SCAD/MCP/LASSO
+the R packages \pkg{ncvreg}, \pkg{glmnet}, and \pkg{msaenet} plus an
+internal Cox adaptive elastic-net implementation for the
+SCAD/MCP/LASSO/ENET/AENET
 regularized loglikelihood for the variables picked by (I)SIS.
 }
 \examples{
 
 
 set.seed(0)
-n = 400; p = 50; rho = 0.5
-corrmat = diag(rep(1-rho, p)) + matrix(rho, p, p)
-corrmat[,4] = sqrt(rho)
-corrmat[4, ] = sqrt(rho)
-corrmat[4,4] = 1
-corrmat[,5] = 0
-corrmat[5, ] = 0
-corrmat[5,5] = 1
-cholmat = chol(corrmat)
-x = matrix(rnorm(n*p, mean=0, sd=1), n, p)
-x = x\%*\%cholmat
+n <- 400
+p <- 50
+rho <- 0.5
+corrmat <- diag(rep(1 - rho, p)) + matrix(rho, p, p)
+corrmat[, 4] <- sqrt(rho)
+corrmat[4, ] <- sqrt(rho)
+corrmat[4, 4] <- 1
+corrmat[, 5] <- 0
+corrmat[5, ] <- 0
+corrmat[5, 5] <- 1
+cholmat <- chol(corrmat)
+x <- matrix(rnorm(n * p, mean = 0, sd = 1), n, p)
+x <- x \%*\% cholmat
 
-# gaussian response 
+# gaussian response
 set.seed(1)
-b = c(4,4,4,-6*sqrt(2),4/3)
-y=x[, 1:5]\%*\%b + rnorm(n)
+b <- c(4, 4, 4, -6 * sqrt(2), 4 / 3)
+y <- x[, 1:5] \%*\% b + rnorm(n)
+
+
 # SIS without regularization
-model10 = SIS(x, y, family='gaussian', iter = FALSE)
+model10 <- SIS(x, y, family = "gaussian", iter = FALSE)
 model10$sis.ix0
+# The top 10 selected variables
+model10$ix0[1:10]
+# The top 10 selected variables for each step
+lapply(model10$ix_list, f <- function(x) {
+  x[1:10]
+})
 # ISIS with regularization
-model11=SIS(x, y, family='gaussian', tune='bic')
-model12=SIS(x, y, family='gaussian', tune='bic', varISIS='aggr', seed=11)
+model11 <- SIS(x, y, family = "gaussian", tune = "bic")
+model12 <- SIS(x, y, family = "gaussian", tune = "bic", varISIS = "aggr", seed = 11)
 model11$ix
 model12$ix
-
 \dontrun{
-# binary response 
+# binary response
 set.seed(2)
-feta = x[, 1:5]\%*\%b; fprob = exp(feta)/(1+exp(feta))
-y = rbinom(n, 1, fprob)
-model21=SIS(x, y, family='binomial', tune='bic')
-model22=SIS(x, y, family='binomial', tune='bic', varISIS='aggr', seed=21)
+feta <- x[, 1:5] \%*\% b
+fprob <- exp(feta) / (1 + exp(feta))
+y <- rbinom(n, 1, fprob)
+model21 <- SIS(x, y, family = "binomial", tune = "bic")
+model22 <- SIS(x, y, family = "binomial", tune = "bic", varISIS = "aggr", seed = 21)
 model21$ix
 model22$ix
 
 # poisson response
 set.seed(3)
-b = c(0.6,0.6,0.6,-0.9*sqrt(2))
-myrates = exp(x[, 1:4]\%*\%b)
-y = rpois(n, myrates)
-model31=SIS(x, y, family='poisson', penalty = 'lasso', tune='bic', perm=TRUE, q=0.9, 
-            greedy=TRUE, seed=31)
-model32=SIS(x, y, family='poisson', penalty = 'lasso',  tune='bic', varISIS='aggr', 
-            perm=TRUE, q=0.9, seed=32)
+b <- c(0.6, 0.6, 0.6, -0.9 * sqrt(2))
+myrates <- exp(x[, 1:4] \%*\% b)
+y <- rpois(n, myrates)
+model31 <- SIS(x, y,
+  family = "poisson", penalty = "lasso", tune = "bic", perm = TRUE, q = 0.9,
+  greedy = TRUE, seed = 31
+)
+model32 <- SIS(x, y,
+  family = "poisson", penalty = "lasso", tune = "bic", varISIS = "aggr",
+  perm = TRUE, q = 0.9, seed = 32
+)
 model31$ix
 model32$ix
 
+
 # Cox model
 set.seed(4)
-b = c(4,4,4,-6*sqrt(2),4/3)
-myrates = exp(x[, 1:5]\%*\%b)
-Sur = rexp(n,myrates); CT = rexp(n,0.1)
-Z = pmin(Sur,CT); ind = as.numeric(Sur<=CT)
-y = survival::Surv(Z,ind)
-model41=SIS(x, y, family='cox', penalty='lasso', tune='bic', 
-           varISIS='aggr', seed=41)
-model42=SIS(x, y, family='cox', penalty='lasso', tune='bic', 
-             varISIS='cons', seed=41)
+b <- c(4, 4, 4, -6 * sqrt(2), 4 / 3)
+myrates <- exp(x[, 1:5] \%*\% b)
+Sur <- rexp(n, myrates)
+CT <- rexp(n, 0.1)
+Z <- pmin(Sur, CT)
+ind <- as.numeric(Sur <= CT)
+y <- survival::Surv(Z, ind)
+model41 <- SIS(x, y,
+  family = "cox", penalty = "lasso", tune = "bic",
+  varISIS = "aggr", seed = 41
+)
+model42 <- SIS(x, y,
+  family = "cox", penalty = "lasso", tune = "bic",
+  varISIS = "cons", seed = 41
+)
 model41$ix
 model42$ix
+
+# SIS with bootstrap confidence intervals
+sis <- SIS(x, y, family = "cox", penalty='aenet', tune='cv', varISIS='cons',
+seed = 41, boot_ci=FALSE)
+sis$cis
 }
 
 }
@@ -232,12 +278,18 @@ the American Statistical Association}, \bold{106}, 544-557.
 Jiahua Chen and Zehua Chen (2008) Extended Bayesian Information Criteria for
 Model Selection with Large Model Spaces. \emph{Biometrika}, \bold{95},
 759-771.
+
+Domingo-Relloso, Arce, Yang Feng, Zulema Rodriguez-Hernandez, Karin Haack, Shelley A. Cole,
+Ana Navas-Acien, Maria Tellez-Plaza, and Jose D. Bermudez (2024) Omics feature selection
+with the extended SIS R package: identification of a body mass index epigenetic multimarker 
+in the Strong Heart Study. \emph{American Journal of Epidemiology}, \bold{193}, no. 7:
+1010-1018.
 }
 \seealso{
 \code{\link{predict.SIS}}
 }
 \author{
-Jianqing Fan, Yang Feng, Diego Franco Saldana, Richard Samworth, and
+Jianqing Fan, Yang Feng, Diego Franco Saldana, Richard Samworth, Arce Domingo-Relloso and
 Yichao Wu
 }
 \keyword{models}

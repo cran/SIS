@@ -1,0 +1,236 @@
+---
+title: "A demonstration of the SIS package"
+author: "Yang Feng, Arce Domingo"
+date: "`r Sys.Date()`"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{A demonstration of the SIS package}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+
+We provide a detailed demo of the usage for the \verb+SIS+ package. This package implements the sure independence screening algorithm.
+
+
+* [Sure Independence Screening](#sis)
+
+  + [Installation](#install)
+  + [SIS screening without iteration](#SIS)
+  + [ISIS screening](#ISIS)
+  + [Screening with binary response](#SIS-binary)
+  + [Screening with multi-categorical response](#SIS-multinom)
+  + [Screening with Cox model for survival data](#SIS-cox)
+  + [Screening with multi-categorical response](#SIS-multinom)
+  + [Real data example (leukemia): Iterative Sure Independence Screening paired with elastic-net](#ISIS-enet-leukemia)
+  + [Real data example (prostate cancer): Iterative Sure Independence Screening paired with elastic-net](#ISIS-enet-prostate)
+
+```{r, echo = FALSE}
+library(formatR)
+```
+# Sure Independence Screening{#sis}
+
+
+## Installation{#install}
+`SIS` can be installed from Github or CRAN. 
+```{r, eval=FALSE}
+library(devtools)
+devtools::install_github("yangfengstat/SIS", force=TRUE)
+```
+
+Then we can load the package, as well as other relevant packages:
+
+```{r}
+library(SIS)
+library(pROC)
+```
+
+
+<a id="sis"></a>
+
+## Quickstart{#fit}
+We will show in this section how to use the SIS package. 
+
+First, we generate a linear model with the first five predictors as signals. 
+```{r, tidy=TRUE, tidy.opts=list(width.cutoff=70)}
+set.seed(0)
+n = 400; p = 50; rho = 0.5
+corrmat = diag(rep(1-rho, p)) + matrix(rho, p, p)
+corrmat[,4] = sqrt(rho)
+corrmat[4, ] = sqrt(rho)
+corrmat[4,4] = 1
+corrmat[,5] = 0
+corrmat[5, ] = 0
+corrmat[5,5] = 1
+cholmat = chol(corrmat)
+x = matrix(rnorm(n*p, mean=0, sd=1), n, p)
+x = x%*%cholmat
+
+# gaussian response 
+set.seed(1)
+b = c(4,4,4,-6*sqrt(2),4/3)
+y=x[, 1:5]%*%b + rnorm(n)
+```
+
+## SIS screening without iteration{#SIS}
+Next, we apply the SIS screening without iteration. 
+```{r, tidy=TRUE, tidy.opts=list(width.cutoff=70)}
+# SIS without regularization
+model10 = SIS(x, y, family='gaussian', iter = FALSE)
+
+# Getting the final selected variables after regularization step
+model10$ix
+
+# Getting the ranked list of variables from the screening step
+model10$sis.ix0
+
+# The top 10 ranked variables from the screening step
+model10$ix0[1:10]
+```
+
+## Iterative SIS {#ISIS}
+Now, we apply the SIS screening with iteration and combined with SCAD penalty. 
+```{r, tidy=TRUE, tidy.opts=list(width.cutoff=70)}
+# SIS with regularization
+model11 = SIS(x, y, family='gaussian', penalty = 'SCAD', iter = TRUE)
+
+# Getting the final selected variables
+model10$ix
+
+# The top 10 ranked variables for the final screening step
+model11$ix0[1:10]
+
+# The top 10 ranked variables for each screening step
+lapply(model11$ix_list,f<-function(x){x[1:10]})
+```
+
+## Screening with binary response{#SIS-binary}
+```{r, tidy=TRUE, tidy.opts=list(width.cutoff=70)}
+set.seed(2)
+feta <- x[, 1:5] %*% b
+fprob <- exp(feta) / (1 + exp(feta))
+y <- rbinom(n, 1, fprob)
+model21 <- SIS(x, y, family = "binomial", tune = "bic")
+
+# Getting the final selected variables
+model21$ix
+
+# The top 10 ranked variables for the final screening step
+model11$ix0[1:10]
+
+# The top 10 ranked variables for each screening step
+lapply(model11$ix_list,f<-function(x){x[1:10]})
+```
+
+## Screening with Cox model for survival data{#SIS-cox}
+
+```{r, tidy=TRUE, tidy.opts=list(width.cutoff=70)}
+set.seed(4)
+b <- c(4, 4, 4, -6 * sqrt(2), 4 / 3)
+myrates <- exp(x[, 1:5] %*% b)
+Sur <- rexp(n, myrates)
+CT <- rexp(n, 0.1)
+Z <- pmin(Sur, CT)
+ind <- as.numeric(Sur <= CT)
+y <- survival::Surv(Z, ind)
+model41 <- SIS(x, y,
+  family = "cox", penalty = "lasso", tune = "bic",
+  varISIS = "aggr", seed = 41
+)
+model42 <- SIS(x, y,
+  family = "cox", penalty = "lasso", tune = "bic",
+  varISIS = "cons", seed = 41
+)
+model41$ix
+model42$ix
+```
+
+
+
+## Screening with multi-categorical response{#SIS-multinom}
+```{r, tidy=TRUE, tidy.opts=list(width.cutoff=70)}
+y <- as.factor(iris$Species)
+noise <- matrix(rnorm(nrow(iris)*200),nrow(iris),200)
+x <- cbind(as.matrix(iris[,-5]),noise)
+
+model21 <- SIS(x, y, family = "multinom", penalty = 'lasso')
+
+# Getting the final selected variables
+model21$ix
+
+# The top 10 ranked variables for the final screening step
+model21$ix0[1:10]
+
+# The top 10 ranked variables for each screening step
+lapply(model21$ix_list,f<-function(x){x[1:10]})
+```
+
+
+## Real data example (leukemia): Iterative Sure Independence Screening paired with elastic-net{#ISIS-enet-leukemia}
+```{r, message=FALSE, warning=FALSE}
+# Loading data: Gene expression data from 7129 genes and 38 patients with acute leukemias (27 in class acute lymphoblastic leukemia and 11 in class acute myeloid leukemia) from the microarray study of Golub et al. (1999). These data can be found in: http://wwwprod.broadinstitute.org/cgi-bin/cancer/datasets.cgi 
+
+
+# Getting the predictors and response variables
+x_train <- as.matrix(leukemia.train[,1:7129])
+y_train <- leukemia.train[,7130]
+x_test <- as.matrix(leukemia.test[,1:7129])
+y_test <- leukemia.test[,7130]
+
+
+# Calling SIS and calculating the time taken for the algorithm to run
+start.time <- Sys.time()
+sis <- SIS(x_train, y_train, family = "binomial", penalty='enet',
+           tune='cv', nfolds = 10, iter = TRUE, iter.max = 10,
+           seed = 123, nsis=dim(x_train)[1]/2, standardize = TRUE,
+           boot_ci=FALSE)
+end.time <- Sys.time()
+time.taken <- end.time - start.time
+time.taken
+```
+
+```{r, tidy=TRUE, tidy.opts=list(width.cutoff=70)}
+# Getting the AUC in the test set
+pred <- predict(sis, x_test, type='class')
+auc(pred[,1], y_test)
+
+# Bootstrap confidence intervals are omitted in the vignette build to keep the
+# example deterministic and CRAN-stable.
+```
+
+## Real data example (prostate cancer): Iterative Sure Independence Screening paired with elastic-net{#ISIS-enet}
+```{r, message=FALSE, warning=FALSE}
+# Loading data: Gene expression data from 12600 genes and 52 patients with prostate tumors and 50 normal specimens from the microarray study of Singh et al. (2002). These data can be found in: \source{http://wwwprod.broadinstitute.org/cgi-bin/cancer/datasets.cgi} 
+
+# Getting the predictors and response variables
+x_train <- as.matrix(prostate.train[,1:12600])
+y_train <- prostate.train[,12601]
+x_test <- as.matrix(prostate.test[,1:12600])
+y_test <- prostate.test[,12601]
+
+# Calling SIS and calculating the time taken for the algorithm to run
+start.time <- Sys.time()
+sis <- SIS(x_train, y_train, family = "binomial", penalty='enet',
+           nfolds = 10, iter = TRUE, iter.max = 10,tune='cv', 
+           seed = 123, nsis=dim(x_train)[1]/2, standardize = TRUE,
+           boot_ci=FALSE)
+end.time <- Sys.time()
+time.taken <- end.time - start.time
+time.taken
+```
+
+```{r, tidy=TRUE, tidy.opts=list(width.cutoff=70)}
+# Getting the AUC in the test set
+pred <- predict(sis, x_test, type='class')
+auc(pred[,1], y_test)
+
+# Bootstrap confidence intervals are omitted in the vignette build to keep the
+# example deterministic and CRAN-stable.
+```

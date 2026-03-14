@@ -24,7 +24,7 @@ model by (I)SIS at which predictions are required. By default, only the
 lambda minimizing the criterion \code{tune} is returned.}
 
 \item{which}{Indices of the penalty parameter \code{lambda} of the final fitted
-model by (I)SIS at which predictions are required. If supplied, will overwrite 
+model by (I)SIS at which predictions are required. If supplied, will overwrite
 the default \code{lambda} value.}
 
 \item{type}{Type of prediction required. Type \code{'response'} gives the
@@ -49,55 +49,58 @@ a fitted \code{'SIS'} object.
 
 
 set.seed(0)
-n = 400; p = 50; rho = 0.5
-corrmat = diag(rep(1-rho, p)) + matrix(rho, p, p)
-corrmat[,4] = sqrt(rho)
-corrmat[4, ] = sqrt(rho)
-corrmat[4,4] = 1
-corrmat[,5] = 0
-corrmat[5, ] = 0
-corrmat[5,5] = 1
-cholmat = chol(corrmat)
-x = matrix(rnorm(n*p, mean=0, sd=1), n, p)
-x = x\%*\%cholmat
-testX = matrix(rnorm(10*p, mean=0, sd=1), nrow=10, ncol=p)
+n <- 400
+p <- 50
+rho <- 0.5
+corrmat <- diag(rep(1 - rho, p)) + matrix(rho, p, p)
+corrmat[, 4] <- sqrt(rho)
+corrmat[4, ] <- sqrt(rho)
+corrmat[4, 4] <- 1
+corrmat[, 5] <- 0
+corrmat[5, ] <- 0
+corrmat[5, 5] <- 1
+cholmat <- chol(corrmat)
+x <- matrix(rnorm(n * p, mean = 0, sd = 1), n, p)
+x <- x \%*\% cholmat
+colnames(x) <- unlist(lapply(seq(1:dim(x)[2]), function(y) paste0('V',y)))
+testX <- matrix(rnorm(10 * p, mean = 0, sd = 1), nrow = 10, ncol = p)
 
-# gaussian response 
+# gaussian response
 set.seed(1)
-b = c(4,4,4,-6*sqrt(2),4/3)
-y=x[, 1:5]\%*\%b + rnorm(n)
-model1=SIS(x, y, family='gaussian', tune='bic', varISIS='aggr', seed=11)
+b <- c(4, 4, 4, -6 * sqrt(2), 4 / 3)
+y <- x[, 1:5] \%*\% b + rnorm(n)
+model1 <- SIS(x, y, family = "gaussian", tune = "bic", varISIS = "aggr", seed = 11)
 
-predict(model1, testX, type='response')
-predict(model1, testX, which=1:10, type='response')
-
+predict(model1, testX, type = "response")
+predict(model1, testX, which = 1:10, type = "response")
 \dontrun{
-# binary response 
+# binary response
 set.seed(2)
-feta = x[, 1:5]\%*\%b; fprob = exp(feta)/(1+exp(feta))
-y = rbinom(n, 1, fprob)
-model2=SIS(x, y, family='binomial', tune='bic', varISIS='aggr', seed=21)
+feta <- x[, 1:5] \%*\% b
+fprob <- exp(feta) / (1 + exp(feta))
+y <- rbinom(n, 1, fprob)
+model2 <- SIS(x, y, family = "binomial", tune = "bic", varISIS = "aggr", seed = 21)
 
-predict(model2, testX, type='response')
-predict(model2, testX, type='link')
-predict(model2, testX, type='class')
+predict(model2, testX, type = "response")
+predict(model2, testX, type = "link")
+predict(model2, testX, type = "class")
 
-predict(model2, testX, which=1:10, type='response')
-predict(model2, testX, which=1:10, type='link')
-predict(model2, testX, which=1:10, type='class')
+predict(model2, testX, which = 1:10, type = "response")
+predict(model2, testX, which = 1:10, type = "link")
+predict(model2, testX, which = 1:10, type = "class")
 
 # poisson response
 set.seed(3)
-b = c(0.6,0.6,0.6,-0.9*sqrt(2))
-myrates = exp(x[, 1:4]\%*\%b)
-y = rpois(n, myrates)
-model3=SIS(x, y, family='poisson', penalty = 'lasso',tune='bic', varISIS='aggr', seed=31)
+b <- c(0.6, 0.6, 0.6, -0.9 * sqrt(2))
+myrates <- exp(x[, 1:4] \%*\% b)
+y <- rpois(n, myrates)
+model3 <- SIS(x, y, 
+family = "poisson", penalty = "lasso", tune = "bic", 
+varISIS = "aggr", seed = 31)
 
-predict(model3, testX, type='response')
-predict(model3, testX, type='link')
+predict(model3, testX, type = "response")
+predict(model3, testX, type = "link")
 }
-
-
 
 }
 \references{

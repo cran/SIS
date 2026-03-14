@@ -1,13 +1,16 @@
 #' (Iterative) Sure Independence Screening ((I)SIS) and Fitting in Generalized
 #' Linear Models and Cox's Proportional Hazards Models
-#' 
+#'
 #' This function first implements the Iterative Sure Independence Screening for
 #' different variants of (I)SIS, and then fits the final regression model using
-#' the R packages \pkg{ncvreg} and \pkg{glmnet} for the SCAD/MCP/LASSO
+#' the R packages \pkg{ncvreg}, \pkg{glmnet}, and \pkg{msaenet} plus an
+#' internal Cox adaptive elastic-net implementation for the
+#' SCAD/MCP/LASSO/ENET/AENET
 #' regularized loglikelihood for the variables picked by (I)SIS.
-#' 
+#'
 #' @export
 #' @importFrom glmnet glmnet
+#' @importFrom msaenet aenet
 #' @importFrom ncvreg ncvreg
 #' @importFrom glmnet cv.glmnet
 #' @importFrom ncvreg cv.ncvreg
@@ -22,19 +25,22 @@
 #' @importFrom stats poisson
 #' @importFrom stats deviance
 #' @importFrom stats predict
-#' 
-#' 
+#' @importFrom nnet multinom
+#' @import doParallel
+#' @importFrom foreach foreach
+#'
 #' @param x The design matrix, of dimensions n * p, without an intercept. Each
 #' row is an observation vector.  \code{SIS} standardizes the data and includes
 #' an intercept by default.
 #' @param y The response vector of dimension n * 1. Quantitative for
 #' \code{family='gaussian'}, non-negative counts for \code{family='poisson'},
-#' binary (0-1) for \code{family='binomial'}. For \code{family='cox'}, \code{y}
-#' should be an object of class \code{Surv}, as provided by the function
-#' \code{Surv()} in the package \pkg{survival}.
+#' binary (0-1) for \code{family='binomial'}, factor for \code{family='multinom'}.
+#' For \code{family='cox'}, \code{y} should be an object of class \code{Surv}, 
+#' as provided by the function \code{Surv()} in the package \pkg{survival}.
 #' @param family Response type (see above).
 #' @param penalty The penalty to be applied in the regularized likelihood
-#' subproblems. 'SCAD' (the default), 'MCP', or 'lasso' are provided.
+#' subproblems. 'SCAD', 'MCP', or 'lasso' are provided. 'lasso' is the default
+#' for family = 'multinom' or 'cox', 'SCAD' is the default for other families. 
 #' @param concavity.parameter The tuning parameter used to adjust the concavity
 #' of the SCAD/MCP penalty. Default is 3.7 for SCAD and 3 for MCP.
 #' @param tune Method for tuning the regularization parameter of the penalized
@@ -73,7 +79,7 @@
 #' \eqn{y_i} through a random permutation \eqn{\pi} of \eqn{(1,...,n)} to form
 #' a null model.  For this newly permuted data, marginal regression
 #' coefficients for each predictor are recalculated.  As the marginal
-#' regression coeffcients of the original data should be larger than most
+#' regression coefficients of the original data should be larger than most
 #' recalculated coefficients in the null model, the data-driven threshold is
 #' given by the \eqn{q}th quantile of the null coefficients. This data-driven
 #' threshold only allows a \eqn{1-q} proportion of inactive variables to enter
@@ -95,280 +101,382 @@
 #' always returned on the original scale. Default is \code{standardize=TRUE}.
 #' If variables are in the same units already, you might not wish to
 #' standardize.
-#' @return Returns an object with \item{sis.ix0}{The vector of indices selected by
-#' only SIS.} \item{ix}{ The vector of indices selected by
-#' (I)SIS with regularization step.  } \item{coef.est}{ The vector of coefficients of the final model
-#' selected by (I)SIS.  } \item{fit}{ A fitted object of type \code{ncvreg},
-#' \code{cv.ncvreg}, \code{glmnet}, or \code{cv.glmnet} for the final model
-#' selected by the (I)SIS procedure. If \code{tune='cv'}, the returned fitted
-#' object is of type \code{cv.ncvreg} if \code{penalty='SCAD'} or
-#' \code{penalty='MCP'}; otherwise, the returned fitted object is of type
-#' \code{cv.glmnet}. For the remaining options of \code{tune}, the returned
-#' object is of type \code{glmnet} if \code{penalty='lasso'}, and \code{ncvreg}
-#' otherwise.  } \item{path.index}{ The index along the solution path of
-#' \code{fit} for which the criterion specified in \code{tune} is minimized.  }
-#' @author Jianqing Fan, Yang Feng, Diego Franco Saldana, Richard Samworth, and
+#' @param covars Names of the factor variables.
+#' @param boot_ci Logical flag for computing bootstrap confidence intervals. Default = FALSE.
+#' @param parallel Specifies whether to conduct parallel computing
+#' @return A list with components:
+#' \describe{
+#'   \item{sis.ix0}{The vector of indices selected by only SIS.}
+#'   \item{ix}{The vector of indices selected by (I)SIS with the regularization step.}
+#'   \item{coef.est}{The vector of coefficients of the final model selected by (I)SIS.}
+#'   \item{fit}{A fitted object of type \code{ncvreg}, \code{cv.ncvreg},
+#'   \code{glmnet}, or \code{cv.glmnet} for the final model selected by the
+#'   (I)SIS procedure. If \code{tune='cv'}, the returned fitted object is of
+#'   type \code{cv.ncvreg} if \code{penalty='SCAD'} or \code{penalty='MCP'};
+#'   otherwise, the returned fitted object is of type \code{cv.glmnet}. For
+#'   the remaining options of \code{tune}, the returned object is of type
+#'   \code{glmnet} if \code{penalty='lasso'}, and \code{ncvreg} otherwise.}
+#'   \item{path.index}{The index along the solution path of \code{fit} for
+#'   which the criterion specified in \code{tune} is minimized.}
+#'   \item{ix0}{The vector of indices ordered by decreasing importance.}
+#'   \item{ix_list}{The list of vectors of indices ordered by decreasing
+#'   importance, for each screening step.}
+#'   \item{cis}{A data frame with columns \code{coef}, \code{CI_low},
+#'   \code{CI_up}, \code{Est}, \code{CI_low_perc}, and \code{CI_up_perc}.}
+#' }
+#' @author Jianqing Fan, Yang Feng, Diego Franco Saldana, Richard Samworth, Arce Domingo-Relloso and
 #' Yichao Wu
 #' @seealso \code{\link{predict.SIS}}
-#' @references 
+#' @references
 #' Diego Franco Saldana and Yang Feng (2018) SIS: An R package for Sure Independence Screening in
 #' Ultrahigh Dimensional Statistical Models, \emph{Journal of Statistical Software}, \bold{83}, 2, 1-25.
-#' 
+#'
 #' Jianqing Fan and Jinchi Lv (2008) Sure Independence Screening
 #' for Ultrahigh Dimensional Feature Space (with discussion). \emph{Journal of
 #' Royal Statistical Society B}, \bold{70}, 849-911.
-#' 
+#'
 #' Jianqing Fan and Rui Song (2010) Sure Independence Screening in Generalized
 #' Linear Models with NP-Dimensionality.  \emph{The Annals of Statistics},
 #' \bold{38}, 3567-3604.
-#' 
+#'
 #' Jianqing Fan, Richard Samworth, and Yichao Wu (2009) Ultrahigh Dimensional
 #' Feature Selection: Beyond the Linear Model. \emph{Journal of Machine
 #' Learning Research}, \bold{10}, 2013-2038.
-#' 
+#'
 #' Jianqing Fan, Yang Feng, and Yichao Wu (2010) High-dimensional Variable
 #' Selection for Cox Proportional Hazards Model. \emph{IMS Collections},
 #' \bold{6}, 70-86.
-#' 
+#'
 #' Jianqing Fan, Yang Feng, and Rui Song (2011) Nonparametric Independence
 #' Screening in Sparse Ultrahigh Dimensional Additive Models. \emph{Journal of
 #' the American Statistical Association}, \bold{106}, 544-557.
-#' 
+#'
 #' Jiahua Chen and Zehua Chen (2008) Extended Bayesian Information Criteria for
 #' Model Selection with Large Model Spaces. \emph{Biometrika}, \bold{95},
 #' 759-771.
+#' 
+#' Domingo-Relloso, Arce, Yang Feng, Zulema Rodriguez-Hernandez, Karin Haack, Shelley A. Cole,
+#' Ana Navas-Acien, Maria Tellez-Plaza, and Jose D. Bermudez (2024) Omics feature selection
+#' with the extended SIS R package: identification of a body mass index epigenetic multimarker 
+#' in the Strong Heart Study. \emph{American Journal of Epidemiology}, \bold{193}, no. 7:
+#' 1010-1018.
 #' @keywords models
 #' @examples
-#' 
-#' 
+#'
+#'
 #' set.seed(0)
-#' n = 400; p = 50; rho = 0.5
-#' corrmat = diag(rep(1-rho, p)) + matrix(rho, p, p)
-#' corrmat[,4] = sqrt(rho)
-#' corrmat[4, ] = sqrt(rho)
-#' corrmat[4,4] = 1
-#' corrmat[,5] = 0
-#' corrmat[5, ] = 0
-#' corrmat[5,5] = 1
-#' cholmat = chol(corrmat)
-#' x = matrix(rnorm(n*p, mean=0, sd=1), n, p)
-#' x = x%*%cholmat
+#' n <- 400
+#' p <- 50
+#' rho <- 0.5
+#' corrmat <- diag(rep(1 - rho, p)) + matrix(rho, p, p)
+#' corrmat[, 4] <- sqrt(rho)
+#' corrmat[4, ] <- sqrt(rho)
+#' corrmat[4, 4] <- 1
+#' corrmat[, 5] <- 0
+#' corrmat[5, ] <- 0
+#' corrmat[5, 5] <- 1
+#' cholmat <- chol(corrmat)
+#' x <- matrix(rnorm(n * p, mean = 0, sd = 1), n, p)
+#' x <- x %*% cholmat
 #' 
-#' # gaussian response 
+#' # gaussian response
 #' set.seed(1)
-#' b = c(4,4,4,-6*sqrt(2),4/3)
-#' y=x[, 1:5]%*%b + rnorm(n)
+#' b <- c(4, 4, 4, -6 * sqrt(2), 4 / 3)
+#' y <- x[, 1:5] %*% b + rnorm(n)
+#' 
+#' 
 #' # SIS without regularization
-#' model10 = SIS(x, y, family='gaussian', iter = FALSE)
+#' model10 <- SIS(x, y, family = "gaussian", iter = FALSE)
 #' model10$sis.ix0
+#' # The top 10 selected variables
+#' model10$ix0[1:10]
+#' # The top 10 selected variables for each step
+#' lapply(model10$ix_list, f <- function(x) {
+#'   x[1:10]
+#' })
 #' # ISIS with regularization
-#' model11=SIS(x, y, family='gaussian', tune='bic')
-#' model12=SIS(x, y, family='gaussian', tune='bic', varISIS='aggr', seed=11)
+#' model11 <- SIS(x, y, family = "gaussian", tune = "bic")
+#' model12 <- SIS(x, y, family = "gaussian", tune = "bic", varISIS = "aggr", seed = 11)
 #' model11$ix
 #' model12$ix
-#' 
 #' \dontrun{
-#' # binary response 
+#' # binary response
 #' set.seed(2)
-#' feta = x[, 1:5]%*%b; fprob = exp(feta)/(1+exp(feta))
-#' y = rbinom(n, 1, fprob)
-#' model21=SIS(x, y, family='binomial', tune='bic')
-#' model22=SIS(x, y, family='binomial', tune='bic', varISIS='aggr', seed=21)
+#' feta <- x[, 1:5] %*% b
+#' fprob <- exp(feta) / (1 + exp(feta))
+#' y <- rbinom(n, 1, fprob)
+#' model21 <- SIS(x, y, family = "binomial", tune = "bic")
+#' model22 <- SIS(x, y, family = "binomial", tune = "bic", varISIS = "aggr", seed = 21)
 #' model21$ix
 #' model22$ix
-#' 
+#'
 #' # poisson response
 #' set.seed(3)
-#' b = c(0.6,0.6,0.6,-0.9*sqrt(2))
-#' myrates = exp(x[, 1:4]%*%b)
-#' y = rpois(n, myrates)
-#' model31=SIS(x, y, family='poisson', penalty = 'lasso', tune='bic', perm=TRUE, q=0.9, 
-#'             greedy=TRUE, seed=31)
-#' model32=SIS(x, y, family='poisson', penalty = 'lasso',  tune='bic', varISIS='aggr', 
-#'             perm=TRUE, q=0.9, seed=32)
+#' b <- c(0.6, 0.6, 0.6, -0.9 * sqrt(2))
+#' myrates <- exp(x[, 1:4] %*% b)
+#' y <- rpois(n, myrates)
+#' model31 <- SIS(x, y,
+#'   family = "poisson", penalty = "lasso", tune = "bic", perm = TRUE, q = 0.9,
+#'   greedy = TRUE, seed = 31
+#' )
+#' model32 <- SIS(x, y,
+#'   family = "poisson", penalty = "lasso", tune = "bic", varISIS = "aggr",
+#'   perm = TRUE, q = 0.9, seed = 32
+#' )
 #' model31$ix
 #' model32$ix
-#' 
+#'
+#'
 #' # Cox model
 #' set.seed(4)
-#' b = c(4,4,4,-6*sqrt(2),4/3)
-#' myrates = exp(x[, 1:5]%*%b)
-#' Sur = rexp(n,myrates); CT = rexp(n,0.1)
-#' Z = pmin(Sur,CT); ind = as.numeric(Sur<=CT)
-#' y = survival::Surv(Z,ind)
-#' model41=SIS(x, y, family='cox', penalty='lasso', tune='bic', 
-#'            varISIS='aggr', seed=41)
-#' model42=SIS(x, y, family='cox', penalty='lasso', tune='bic', 
-#'              varISIS='cons', seed=41)
+#' b <- c(4, 4, 4, -6 * sqrt(2), 4 / 3)
+#' myrates <- exp(x[, 1:5] %*% b)
+#' Sur <- rexp(n, myrates)
+#' CT <- rexp(n, 0.1)
+#' Z <- pmin(Sur, CT)
+#' ind <- as.numeric(Sur <= CT)
+#' y <- survival::Surv(Z, ind)
+#' model41 <- SIS(x, y,
+#'   family = "cox", penalty = "lasso", tune = "bic",
+#'   varISIS = "aggr", seed = 41
+#' )
+#' model42 <- SIS(x, y,
+#'   family = "cox", penalty = "lasso", tune = "bic",
+#'   varISIS = "cons", seed = 41
+#' )
 #' model41$ix
 #' model42$ix
-#' }
 #' 
-SIS <- function(x, y, family = c("gaussian", "binomial", "poisson", "cox"), penalty = c("SCAD", "MCP", "lasso"), 
-    concavity.parameter = switch(penalty, SCAD = 3.7, 3), tune = c("bic", "ebic", "aic", "cv"), nfolds = 10, 
-    type.measure = c("deviance", "class", "auc", "mse", "mae"), gamma.ebic = 1, nsis = NULL, iter = TRUE, iter.max = ifelse(greedy == 
-        FALSE, 10, floor(nrow(x)/log(nrow(x)))), varISIS = c("vanilla", "aggr", "cons"), perm = FALSE, q = 1, 
-    greedy = FALSE, greedy.size = 1, seed = NULL, standardize = TRUE) {
+#' # SIS with bootstrap confidence intervals
+#' sis <- SIS(x, y, family = "cox", penalty='aenet', tune='cv', varISIS='cons',
+#' seed = 41, boot_ci=FALSE)
+#' sis$cis
+#'}
+#'
+
+SIS <- function(x, y, family = c("gaussian", "binomial", "poisson", "cox", "multinom"), penalty = c("SCAD", "MCP", "lasso", "enet", "aenet", "msaenet"),
+                      concavity.parameter = switch(penalty, SCAD = 3.7, 3), tune = c("bic", "ebic", "aic", "cv"), nfolds = 10,
+                      type.measure = c("deviance", "class", "auc", "mse", "mae"), gamma.ebic = 1, nsis = NULL, iter = TRUE, iter.max = ifelse(greedy ==
+                                                                                                                                                FALSE, 10, floor(nrow(x) / log(nrow(x)))), varISIS = c("vanilla", "aggr", "cons"), perm = FALSE, q = 1,
+                      greedy = FALSE, greedy.size = 1, seed = NULL, standardize = TRUE, covars=NULL, boot_ci = FALSE, parallel=TRUE) {
+  this.call <- match.call()
+  family <- match.arg(family)
+  penalty <- match.arg(penalty)
+  tune <- match.arg(tune)
+  type.measure <- match.arg(type.measure)
+  varISIS <- match.arg(varISIS)
+  set.seed(seed)
+  
+  if (is.null(x) || is.null(y)) {
+    stop("The data is missing!")
+  }
+  if (!is.numeric(concavity.parameter)) {
+    stop("concavity.parameter must be numeric!")
+  }
+  if (!is.numeric(nfolds)) {
+    stop("nfolds must be numeric!")
+  }
+  if (!is.null(seed) & !is.numeric(seed)) {
+    stop("seed must be numeric!")
+  }
+  if (family == 'multinom' | is.null(penalty)){
+    penalty = 'lasso'
+  }
+  if (tune != "cv" && penalty %in% c("aenet", "msaenet")) {
+    stop("Model currently not implemented with selected tuning option")
+  }
+  if (family == "multinom" && penalty %in% c("SCAD", "MCP", "aenet", "msaenet")) {
+    stop("Multinom model currently not implemented with selected penalty")
+  }
+  if (type.measure %in% c("class", "auc") && family %in% c("gaussian", "poisson", "cox")) {
+    stop("'class' and 'auc' type measures are only available for logistic regression")
+  }
+  
+  if (type.measure %in% c("class", "auc", "mse", "mae") && penalty %in% c("SCAD", "MCP")) {
+    stop("Only 'deviance' is available as type.measure for non-convex penalties")
+  }
+  if (is.null(colnames(x))){
+    colnames(x) <- unlist(lapply(seq(1:dim(x)[2]), function(y) paste0('V',y)))
     
-    this.call = match.call()
-    family = match.arg(family)
-    penalty = match.arg(penalty)
-    tune = match.arg(tune)
-    type.measure = match.arg(type.measure)
-    varISIS = match.arg(varISIS)
-    
-    if (is.null(x) || is.null(y)) 
-        stop("The data is missing!")
-    if (class(concavity.parameter) != "numeric") 
-        stop("concavity.parameter must be numeric!")
-    if (class(nfolds) != "numeric") 
-        stop("nfolds must be numeric!")
-    if (!is.null(seed) &  class(seed) != "numeric") 
-        stop("seed must be numeric!")
-    
-    if (family == "cox" && penalty %in% c("SCAD", "MCP")) 
-        stop("Cox model currently not implemented with selected penalty")
-    
-    if (type.measure %in% c("class", "auc") && family %in% c("gaussian", "poisson", "cox")) 
-        stop("'class' and 'auc' type measures are only available for logistic regression")
-    
-    if (type.measure %in% c("class", "auc", "mse", "mae") && penalty %in% c("SCAD", "MCP")) 
-        stop("Only 'deviance' is available as type.measure for non-convex penalties")
-    
-    fit = switch(family, gaussian = sisglm(x, y, "gaussian", penalty, concavity.parameter, tune, nfolds, type.measure, 
-        gamma.ebic, nsis, iter, iter.max, varISIS, perm, q, greedy, greedy.size, seed, standardize), binomial = sisglm(x, 
-        y, "binomial", penalty, concavity.parameter, tune, nfolds, type.measure, gamma.ebic, nsis, iter, iter.max, 
-        varISIS, perm, q, greedy, greedy.size, seed, standardize), poisson = sisglm(x, y, "poisson", penalty, 
-        concavity.parameter, tune, nfolds, type.measure, gamma.ebic, nsis, iter, iter.max, varISIS, perm, q, 
-        greedy, greedy.size, seed, standardize), cox = sisglm(x, y, "cox", penalty, concavity.parameter, tune, 
-        nfolds, type.measure, gamma.ebic, nsis, iter, iter.max, varISIS, perm, q, greedy, greedy.size, seed, 
-        standardize))
-    fit$call = this.call
-    class(fit) = c(class(fit), "SIS")
-    return(fit)
+  }
+  
+  fit <- switch(family, gaussian = sisglm(
+    x, y, "gaussian", penalty, concavity.parameter, tune,
+    nfolds, type.measure, gamma.ebic, nsis, iter, iter.max, varISIS, perm, q, greedy, greedy.size, seed,
+    standardize, boot_ci, covars, parallel
+  ),
+  binomial = sisglm(
+    x, y, "binomial", penalty, concavity.parameter, tune,
+    nfolds, type.measure, gamma.ebic, nsis, iter, iter.max, varISIS, perm, q, greedy, greedy.size, seed,
+    standardize, boot_ci, covars, parallel
+  ), poisson = sisglm(
+    x, y, "poisson", penalty, concavity.parameter, tune,
+    nfolds, type.measure, gamma.ebic, nsis, iter, iter.max, varISIS, perm, q, greedy, greedy.size, seed,
+    standardize, boot_ci, covars, parallel
+  ), cox = sisglm(
+    x, y, "cox", penalty, concavity.parameter, tune,
+    nfolds, type.measure, gamma.ebic, nsis, iter, iter.max, varISIS, perm, q, greedy, greedy.size, seed,
+    standardize, boot_ci, covars, parallel
+  ), multinom = sisglm(
+    x, y, "multinom", penalty, concavity.parameter, tune,
+    nfolds, type.measure, gamma.ebic, nsis, iter, iter.max, varISIS, perm, q, greedy, greedy.size, seed,
+    standardize, boot_ci, covars, parallel
+  )
+  )
+  fit$call <- this.call
+  class(fit) <- c(class(fit), "SIS")
+  return(fit)
 }
 
-sisglm <- function(x, y, family, penalty, concavity.parameter, tune, nfolds, type.measure, gamma.ebic, nsis, 
-    iter, iter.max, varISIS, perm, q, greedy, greedy.size, seed, standardize, s1 = NULL, s2 = NULL, split.tries = 0) {
-    
-    storage.mode(x) = "numeric"
-    n = dim(x)[1]
-    p = dim(x)[2]
-    models = vector("list")
-    if (is.null(nsis) == TRUE) 
-        nsis = calculate.nsis(family = family, varISIS = varISIS, n = n, p = p)
-    if (is.null(s1) == TRUE) {
-        if(!is.null(seed)){
-          set.seed(seed)
-        }
-        split.sample = sample(1:n)
-        s1 = split.sample[1:ceiling(n/2)]
-        s2 = setdiff(split.sample, s1)
+sisglm <- function(x, y, family, penalty, concavity.parameter, tune, nfolds, type.measure, gamma.ebic, nsis,
+                   iter, iter.max, varISIS, perm, q, greedy, greedy.size, seed, standardize, boot_ci, covars, parallel, s1 = NULL, s2 = NULL, split.tries = 0) {
+  storage.mode(x) <- "numeric"
+  n <- dim(x)[1]
+  p <- dim(x)[2]
+  models <- vector("list")
+  if (is.null(nsis) == TRUE) {
+    nsis <- calculate.nsis(family = family, varISIS = varISIS, n = n, p = p)
+  }
+  if (is.null(s1) == TRUE) {
+    if (!is.null(seed)) {
+      set.seed(seed)
     }
-    old.x = x
-    if (standardize == TRUE) {
-        x = scale(x)
-    }
-    iterind = 0
-    
-    if (iter == TRUE) {
-        ix0 = sort(obtain.ix0(x = x, y = y, s1 = s1, s2 = s2, family = family, nsis = nsis, iter = iter, varISIS = varISIS, 
-            perm = perm, q = q, greedy = greedy, greedy.size = greedy.size, iterind = iterind))
-        sis.ix0 = ix0
-        repeat {
-            iterind = iterind + 1
-            cat("Iter", iterind, ", screening: ", ix0, "\n")
-            if(length(ix0) == 1 & penalty == 'lasso'){
-              ix0 = c(ix0, p+1-ix0)
-            }
-            pen.ind = ix0
-            selection.fit = tune.fit(old.x[,ix0,drop = FALSE], y, family , penalty , concavity.parameter, tune, nfolds , type.measure , gamma.ebic)
-            coef.beta = selection.fit$beta
-            a0 = selection.fit$a0
-            
-            lambda  = selection.fit$lambda
-            lambda.ind = selection.fit$lambda.ind
-            ix1 = sort(ix0[selection.fit$ix])
-            if (length(ix1) == 0) {
-                split.tries = split.tries + 1
-                split.sample = sample(1:n)
-                s1 = split.sample[1:ceiling(n/2)]
-                s2 = setdiff(split.sample, s1)
-                cat("Sample splitting attempt: ", split.tries, "\n")
-                if (split.tries >= 20) {
-                  cat("No variables remaining after ", split.tries, " sample splitting attempts! \n")
-                  cat("You can try a more conservative variable screening approach! \n")
-                } else return(sisglm(old.x, y, family, penalty, concavity.parameter, tune, nfolds, type.measure, gamma.ebic,
-                  nsis, iter, iter.max, varISIS, perm, q, greedy, greedy.size, seed, standardize, s1, s2, split.tries))
-            }
-          
-            
-            cat("Iter", iterind, ", selection: ", ix1, "\n")
-            if (length(ix1) >= nsis || iterind >= iter.max) {
-                ix0 = ix1
-                if (length(ix1) >= nsis) 
-                  cat("Maximum number of variables selected \n")
-                if (iterind >= iter.max) 
-                  cat("Maximum number of iterations reached \n")
-                break
-            }
-            
-            models[[iterind]] = ix1
-            flag.models = 0
-            if (iterind > 1) {
-                for (j in 1:(iterind - 1)) {
-                  if (identical(models[[j]], ix1) == TRUE) 
-                    flag.models = 1
-                }
-            }
-            if (flag.models == 1) {
-                cat("Model already selected \n")
-                break
-            }
-            
-            candind = setdiff(1:p, ix1)
-            pleft = nsis - length(ix1)
-            newix = sort(obtain.newix(x = x, y = y, candind = candind, ix1 = ix1, s1 = s1, s2 = s2, family = family, 
-                pleft = pleft, varISIS = varISIS, perm = perm, q = q, greedy = greedy, greedy.size = greedy.size, 
-                iterind = iterind))
-            cat("Iter", iterind, ", conditional-screening: ", newix, "\n")
-            ix1 = sort(c(ix1, newix))
-            if (setequal(ix1, ix0)) {
-               flag.models = 1
-            }
-            ix0 = ix1
-            if(length(ix1) == 0) break
-        }  # end repeat
-        
-    } else {
-        # end if(iter==TRUE)
-        ix0 = sort(obtain.ix0(x = x, y = y, s1 = s1, s2 = s2, family = family, nsis = nsis, iter = iter, varISIS = varISIS, 
-            perm = perm, q = q, greedy = greedy, greedy.size = greedy.size, iterind = iterind))
-        sis.ix0 = ix0
-        if(length(ix0) == 1 & penalty == 'lasso'){
-          ix0 = c(ix0, p+1-ix0)
-        }
-        pen.ind = ix0
-        selection.fit = tune.fit(old.x[, ix0, drop = FALSE], y, family , penalty , concavity.parameter, tune, nfolds , type.measure , gamma.ebic)
-        coef.beta = selection.fit$beta
-        a0 = selection.fit$a0
-        lambda = selection.fit$lambda
-        lambda.ind = selection.fit$lambda.ind
-        ix1 = sort(ix0[selection.fit$ix])
-    }
-    
-    
-    
-    if (family == "cox") {
-      if (length(ix1) > 0){
-      names(coef.beta) = paste("X", ix1, sep = "") 
+    split.sample <- sample(1:n)
+    s1 <- split.sample[1:ceiling(n / 2)]
+    s2 <- setdiff(split.sample, s1)
+  }
+  old.x <- x
+  if (standardize == TRUE) {
+    x <- scale(x)
+  }
+  ix_list <- NULL
+  iterind <- 0
+  
+  if (iter == TRUE) {
+    ix0_list <- obtain.ix0(
+      x = x, y = y, s1 = s1, s2 = s2, family = family, nsis = nsis, iter = iter, varISIS = varISIS,
+      perm = perm, q = q, greedy = greedy, greedy.size = greedy.size, iterind = iterind
+    )
+    ix0 <- ix0_list$ix0
+    ix0all <- ix0_list$ix0all
+    sis.ix0 <- ix0
+    ix_list[[1]] <- ix0all
+    repeat {
+      iterind <- iterind + 1
+      cat("Iter", iterind, ", screening: ", ix0, "\n")
+      if (length(ix0) == 1 & penalty == "lasso") {
+        ix0 <- c(ix0, p + 1 - ix0)
       }
-    }  else {
-      coef.beta = c(a0, coef.beta) 
-      if(length(ix1)>0){
-        names(coef.beta) = c("(Intercept)", paste("X", ix1, sep = ""))
+      pen.ind <- ix0
+      
+      selection.fit <- tune.fit(old.x[, ix0, drop = FALSE], y, family, penalty, concavity.parameter, tune, nfolds, type.measure, gamma.ebic, parallel, seed)
+      coef.beta <- selection.fit$beta
+      a0 <- selection.fit$a0
+      
+      lambda <- selection.fit$lambda
+      lambda.ind <- selection.fit$lambda.ind
+      ix1 <- ix0[selection.fit$ix]
+      if (length(ix1) == 0) {
+        split.tries <- split.tries + 1
+        split.sample <- sample(1:n)
+        s1 <- split.sample[1:ceiling(n / 2)]
+        s2 <- setdiff(split.sample, s1)
+        cat("Sample splitting attempt: ", split.tries, "\n")
+        if (split.tries >= 20) {
+          cat("No variables remaining after ", split.tries, " sample splitting attempts! \n")
+          cat("You can try a more conservative variable screening approach! \n")
+        } else {
+          return(sisglm(
+            old.x, y, family, penalty, concavity.parameter, tune, nfolds, type.measure, gamma.ebic,
+            nsis, iter, iter.max, varISIS, perm, q, greedy, greedy.size, seed, standardize, boot_ci, covars, parallel, s1 = s1, s2 = s2, split.tries
+          ))
+        }
       }
+      
+      
+      cat("Iter", iterind, ", selection: ", ix1, "\n")
+      if (length(ix1) >= nsis || iterind >= iter.max) {
+        ix0 <- ix1
+        if (length(ix1) >= nsis) {
+          cat("Maximum number of variables selected \n")
+        }
+        if (iterind >= iter.max) {
+          cat("Maximum number of iterations reached \n")
+        }
+        break
+      }
+      
+      models[[iterind]] <- ix1
+      flag.models <- 0
+      if (iterind > 1) {
+        for (j in 1:(iterind - 1)) {
+          if (identical(models[[j]], ix1) == TRUE) {
+            flag.models <- 1
+          }
+        }
+      }
+      if (flag.models == 1) {
+        cat("Model already selected \n")
+        break
+      }
+      
+      candind <- setdiff(1:p, ix1)
+      pleft <- nsis - length(ix1)
+      newix_list <- obtain.newix(
+        x = x, y = y, candind = candind, ix1 = ix1, s1 = s1, s2 = s2, family = family,
+        pleft = pleft, varISIS = varISIS, perm = perm, q = q, greedy = greedy, greedy.size = greedy.size,
+        iterind = iterind
+      )
+      newix <- newix_list$newix
+      newixall <- newix_list$newixall
+      cat("Iter", iterind, ", conditional-screening: ", newix, "\n")
+      ix_list[[iterind + 1]] <- c(ix1, newixall)
+      ix1 <- c(ix1, newix)
+      if (setequal(ix1, ix0)) {
+        flag.models <- 1
+      }
+      ix0 <- ix1
+      if (length(ix1) == 0) break
+    } # end repeat
+  } else {
+    # end if(iter==TRUE)
+    ix0_list <- obtain.ix0(
+      x = x, y = y, s1 = s1, s2 = s2, family = family, nsis = nsis, iter = iter, varISIS = varISIS,
+      perm = perm, q = q, greedy = greedy, greedy.size = greedy.size, iterind = iterind
+    )
+    ix0 <- ix0_list$ix0
+    ix0all <- ix0_list$ix0all
+    ix_list[[1]] <- ix0all
+    sis.ix0 <- ix0
+    if (length(ix0) == 1 & penalty == "lasso") {
+      ix0 <- c(ix0, p + 1 - ix0)
     }
-    
-    return(list(sis.ix0 = sis.ix0, ix = ix1, coef.est = coef.beta, fit = selection.fit$fit, lambda = lambda, lambda.ind = lambda.ind, ix0 = pen.ind))
+    pen.ind <- ix0
+    selection.fit <- tune.fit(old.x[, ix0, drop = FALSE], y, family, penalty, concavity.parameter, tune, nfolds, type.measure, gamma.ebic, parallel, seed)
+    coef.beta <- selection.fit$beta
+    a0 <- selection.fit$a0
+    lambda <- selection.fit$lambda
+    lambda.ind <- selection.fit$lambda.ind
+    ix1 <- ix0[selection.fit$ix]
+  }
+  
+  
+  
+  if (family == "cox") {
+    if (length(ix1) > 0) {
+      names(coef.beta) <- paste("X", ix1, sep = "")
+    }
+  } else {
+    coef.beta <- c(a0, coef.beta)
+    if (length(ix1) > 0) {
+      names(coef.beta) <- c("(Intercept)", paste("X", ix1, sep = ""))
+    }
+  }
+  
+  if (boot_ci == TRUE){
+    cis <- boot_sis(x=old.x[,ix1], y=y, family=family, penalty=penalty, covars=covars, parallel=parallel)
+    return(list(sis.ix0 = sis.ix0, ix = ix1, coef.est = coef.beta, fit = selection.fit$fit, lambda = lambda, ix0 = pen.ind, ix_list = ix_list, cis=cis, family = family))
+  } else{
+    return(list(sis.ix0 = sis.ix0, ix = ix1, coef.est = coef.beta, fit = selection.fit$fit, lambda = lambda, ix0 = pen.ind, ix_list = ix_list, family = family))
+  }
 }

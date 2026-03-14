@@ -2,20 +2,23 @@
 % Please edit documentation in R/tune.fit.R
 \name{tune.fit}
 \alias{tune.fit}
-\title{Using the \pkg{glmnet} and \pkg{ncvreg} packages, fits a Generalized Linear
-Model or Cox Proportional Hazards Model using various methods for choosing
-the regularization parameter \eqn{\lambda}}
+\title{Using the \pkg{glmnet}, \pkg{ncvreg}, \pkg{msaenet}, and \pkg{gcdnet}
+packages plus an internal Cox adaptive elastic-net implementation, fits a
+Generalized Linear Model or Cox Proportional Hazards Model using various
+methods for choosing the regularization parameter \eqn{\lambda}}
 \usage{
 tune.fit(
   x,
   y,
-  family = c("gaussian", "binomial", "poisson", "cox"),
-  penalty = c("SCAD", "MCP", "lasso"),
+  family = c("gaussian", "binomial", "poisson", "cox", "multinom"),
+  penalty = c("SCAD", "MCP", "lasso", "aenet", "msaenet", "enet"),
   concavity.parameter = switch(penalty, SCAD = 3.7, 3),
   tune = c("cv", "aic", "bic", "ebic"),
   nfolds = 10,
   type.measure = c("deviance", "class", "auc", "mse", "mae"),
-  gamma.ebic = 1
+  gamma.ebic = 1,
+  parallel = TRUE,
+  seed = NULL
 )
 }
 \arguments{
@@ -53,12 +56,16 @@ logistic regression and give misclassification error and area under the ROC
 curve, respectively. \code{type.measure='mse'} or \code{type.measure='mae'}
 (mean absolute error) can be used by all models except the \code{'cox'};
 they measure the deviation from the fitted mean to the response. For
-\code{penalty='SCAD'} and \code{penalty='MCP'}, only
+\code{penalty='SCAD'}, \code{penalty='MCP'}, \code{penalty='aenet'} and \code{penalty='msaenet'}, only
 \code{type.measure='deviance'} is available.}
 
 \item{gamma.ebic}{Specifies the parameter in the Extended BIC criterion
 penalizing the size of the corresponding model space. The default is
 \code{gamma.ebic=1}. See references at the end for details.}
+
+\item{parallel}{Specifies whether to conduct parallel computing}
+
+\item{seed}{An optimal argument for setting the seed to ensure reproducibility}
 }
 \value{
 Returns an object with \item{ix}{ The vector of indices of the
@@ -69,30 +76,27 @@ with \code{tune} as the method for choosing the regularization parameter.  }
 \code{tune}.  }
 \item{fit}{The fitted penalized regression object.}
 \item{lambda}{The corresponding lambda in the final model.}
-\item{lambda.ind}{The index on the solution path for the final model.}
 }
 \description{
 This function fits a generalized linear model or a Cox proportional hazards
 model via penalized maximum likelihood, with available penalties as
-indicated in the \pkg{glmnet} and \pkg{ncvreg} packages. Instead of
-providing the whole regularization solution path, the function returns the
-solution at a unique value of \eqn{\lambda}, the one optimizing the
-criterion specified in \code{tune}.
+indicated in the \pkg{glmnet}, \pkg{ncvreg}, \pkg{msaenet}, and
+\pkg{gcdnet} packages. Instead of providing the whole regularization
+solution path, the function returns the solution at a unique value of
+\eqn{\lambda}, the one optimizing the criterion specified in \code{tune}.
 }
 \examples{
 
 
 set.seed(0)
-data('leukemia.train', package = 'SIS')
-y.train = leukemia.train[,dim(leukemia.train)[2]]
-x.train = as.matrix(leukemia.train[,-dim(leukemia.train)[2]])
-x.train = standardize(x.train)
-model = tune.fit(x.train[,1:3500], y.train, family='binomial', tune='bic')
+data("leukemia.train", package = "SIS")
+y.train <- leukemia.train[, dim(leukemia.train)[2]]
+x.train <- as.matrix(leukemia.train[, -dim(leukemia.train)[2]])
+x.train <- standardize(x.train)
+model <- tune.fit(x.train[, 1:3500], y.train, family = "binomial", tune = "bic")
 model$ix
 model$a0
 model$beta
-
-
 }
 \references{
 Jerome Friedman and Trevor Hastie and Rob Tibshirani (2010)
@@ -119,7 +123,7 @@ Model Selection with Large Model Spaces. \emph{Biometrika}, \bold{95},
 759-771.
 }
 \author{
-Jianqing Fan, Yang Feng, Diego Franco Saldana, Richard Samworth, and
+Jianqing Fan, Yang Feng, Diego Franco Saldana, Richard Samworth, Arce Domingo-Relloso and
 Yichao Wu
 }
 \keyword{models}

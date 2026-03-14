@@ -1,8 +1,8 @@
 #' Model prediction based on a fitted SIS object.
-#' 
+#'
 #' Similar to the usual predict methods, this function returns predictions from
 #' a fitted \code{'SIS'} object.
-#' 
+#'
 #' @export
 #' @param object Fitted \code{'SIS'} model object.
 #' @param newx Matrix of new values for \code{x} at which predictions are to be
@@ -11,7 +11,7 @@
 #' model by (I)SIS at which predictions are required. By default, only the
 #' lambda minimizing the criterion \code{tune} is returned.
 #' @param which Indices of the penalty parameter \code{lambda} of the final fitted
-#' model by (I)SIS at which predictions are required. If supplied, will overwrite 
+#' model by (I)SIS at which predictions are required. If supplied, will overwrite
 #' the default \code{lambda} value.
 #' @param type Type of prediction required. Type \code{'response'} gives the
 #' fitted values for \code{'gaussian'}, fitted probabilities for
@@ -26,95 +26,106 @@
 #' @author Jianqing Fan, Yang Feng, Diego Franco Saldana, Richard Samworth, and
 #' Yichao Wu
 #' @seealso \code{\link{SIS}}
-#' @references 
+#' @references
 #' Diego Franco Saldana and Yang Feng (2018) SIS: An R package for Sure Independence Screening in
 #' Ultrahigh Dimensional Statistical Models, \emph{Journal of Statistical Software}, \bold{83}, 2, 1-25.
-#' 
+#'
 #' Jianqing Fan and Jinchi Lv (2008) Sure Independence Screening
 #' for Ultrahigh Dimensional Feature Space (with discussion). \emph{Journal of
 #' Royal Statistical Society B}, \bold{70}, 849-911.
-#' 
+#'
 #' Jianqing Fan and Rui Song (2010) Sure Independence Screening in Generalized
 #' Linear Models with NP-Dimensionality.  \emph{The Annals of Statistics},
 #' \bold{38}, 3567-3604.
-#' 
+#'
 #' Jianqing Fan, Richard Samworth, and Yichao Wu (2009) Ultrahigh Dimensional
 #' Feature Selection: Beyond the Linear Model. \emph{Journal of Machine
 #' Learning Research}, \bold{10}, 2013-2038.
-#' 
+#'
 #' Jianqing Fan, Yang Feng, and Yichao Wu (2010) High-dimensional Variable
 #' Selection for Cox Proportional Hazards Model. \emph{IMS Collections},
 #' \bold{6}, 70-86.
-#' 
+#'
 #' Jianqing Fan, Yang Feng, and Rui Song (2011) Nonparametric Independence
 #' Screening in Sparse Ultrahigh Dimensional Additive Models. \emph{Journal of
 #' the American Statistical Association}, \bold{106}, 544-557.
-#' 
+#'
 #' Diego Franco Saldana and Yang Feng (2014) SIS: An R package for Sure Independence Screening in
 #' Ultrahigh Dimensional Statistical Models, \emph{Journal of Statistical Software}.
 #' @keywords models
 #' @examples
-#' 
-#' 
+#'
+#'
 #' set.seed(0)
-#' n = 400; p = 50; rho = 0.5
-#' corrmat = diag(rep(1-rho, p)) + matrix(rho, p, p)
-#' corrmat[,4] = sqrt(rho)
-#' corrmat[4, ] = sqrt(rho)
-#' corrmat[4,4] = 1
-#' corrmat[,5] = 0
-#' corrmat[5, ] = 0
-#' corrmat[5,5] = 1
-#' cholmat = chol(corrmat)
-#' x = matrix(rnorm(n*p, mean=0, sd=1), n, p)
-#' x = x%*%cholmat
-#' testX = matrix(rnorm(10*p, mean=0, sd=1), nrow=10, ncol=p)
-#' 
-#' # gaussian response 
+#' n <- 400
+#' p <- 50
+#' rho <- 0.5
+#' corrmat <- diag(rep(1 - rho, p)) + matrix(rho, p, p)
+#' corrmat[, 4] <- sqrt(rho)
+#' corrmat[4, ] <- sqrt(rho)
+#' corrmat[4, 4] <- 1
+#' corrmat[, 5] <- 0
+#' corrmat[5, ] <- 0
+#' corrmat[5, 5] <- 1
+#' cholmat <- chol(corrmat)
+#' x <- matrix(rnorm(n * p, mean = 0, sd = 1), n, p)
+#' x <- x %*% cholmat
+#' colnames(x) <- unlist(lapply(seq(1:dim(x)[2]), function(y) paste0('V',y)))
+#' testX <- matrix(rnorm(10 * p, mean = 0, sd = 1), nrow = 10, ncol = p)
+#'
+#' # gaussian response
 #' set.seed(1)
-#' b = c(4,4,4,-6*sqrt(2),4/3)
-#' y=x[, 1:5]%*%b + rnorm(n)
-#' model1=SIS(x, y, family='gaussian', tune='bic', varISIS='aggr', seed=11)
-#' 
-#' predict(model1, testX, type='response')
-#' predict(model1, testX, which=1:10, type='response')
-#' 
+#' b <- c(4, 4, 4, -6 * sqrt(2), 4 / 3)
+#' y <- x[, 1:5] %*% b + rnorm(n)
+#' model1 <- SIS(x, y, family = "gaussian", tune = "bic", varISIS = "aggr", seed = 11)
+#'
+#' predict(model1, testX, type = "response")
+#' predict(model1, testX, which = 1:10, type = "response")
 #' \dontrun{
-#' # binary response 
+#' # binary response
 #' set.seed(2)
-#' feta = x[, 1:5]%*%b; fprob = exp(feta)/(1+exp(feta))
-#' y = rbinom(n, 1, fprob)
-#' model2=SIS(x, y, family='binomial', tune='bic', varISIS='aggr', seed=21)
-#' 
-#' predict(model2, testX, type='response')
-#' predict(model2, testX, type='link')
-#' predict(model2, testX, type='class')
-#' 
-#' predict(model2, testX, which=1:10, type='response')
-#' predict(model2, testX, which=1:10, type='link')
-#' predict(model2, testX, which=1:10, type='class')
-#' 
+#' feta <- x[, 1:5] %*% b
+#' fprob <- exp(feta) / (1 + exp(feta))
+#' y <- rbinom(n, 1, fprob)
+#' model2 <- SIS(x, y, family = "binomial", tune = "bic", varISIS = "aggr", seed = 21)
+#'
+#' predict(model2, testX, type = "response")
+#' predict(model2, testX, type = "link")
+#' predict(model2, testX, type = "class")
+#'
+#' predict(model2, testX, which = 1:10, type = "response")
+#' predict(model2, testX, which = 1:10, type = "link")
+#' predict(model2, testX, which = 1:10, type = "class")
+#'
 #' # poisson response
 #' set.seed(3)
-#' b = c(0.6,0.6,0.6,-0.9*sqrt(2))
-#' myrates = exp(x[, 1:4]%*%b)
-#' y = rpois(n, myrates)
-#' model3=SIS(x, y, family='poisson', penalty = 'lasso',tune='bic', varISIS='aggr', seed=31)
-#' 
-#' predict(model3, testX, type='response')
-#' predict(model3, testX, type='link')
+#' b <- c(0.6, 0.6, 0.6, -0.9 * sqrt(2))
+#' myrates <- exp(x[, 1:4] %*% b)
+#' y <- rpois(n, myrates)
+#' model3 <- SIS(x, y, 
+#' family = "poisson", penalty = "lasso", tune = "bic", 
+#' varISIS = "aggr", seed = 31)
+#'
+#' predict(model3, testX, type = "response")
+#' predict(model3, testX, type = "link")
 #' }
 #'
-#' 
-#' 
 predict.SIS <- function(object, newx, lambda = object$lambda, which = NULL, type = c("response", "link", "class"), ...) {
-  if (!is.null(which)){
-    lambda = object$fit$lambda[which]
+  type <- match.arg(type)
+  if (!is.null(object$family) && object$family == "cox" && is.data.frame(object$fit)) {
+    eta <- as.matrix(newx[, object$ix, drop = FALSE]) %*% object$coef.est
+    if (type == "link") {
+      return(eta)
+    }
+    return(exp(eta))
+  }
+  if (!is.null(which)) {
+    lambda <- object$fit$lambda[which]
   }
   if (class(object$fit)[1] == "ncvreg") {
-    pred = predict(object$fit, newx[, object$ix0], lambda = lambda, type = type) 
-  } else{
-    pred = predict(object$fit, newx[, object$ix0], s = lambda, type = type) 
+    pred <- predict(object$fit, newx[, object$ix0], lambda = lambda, type = type)
+  } else {
+    pred <- predict(object$fit, newx[, object$ix0], s = lambda, type = type)
   }
   return(pred)
 }
@@ -124,7 +135,7 @@ predict.SIS <- function(object, newx, lambda = object$lambda, which = NULL, type
 #         coefs = object$fit$fit$beta[-1, s]
 #         intercept = object$fit$fit$beta[1, s]
 #     } else if (class(object$fit)[1] == "cv.glmnet") {
-#         family = switch(class(object$fit$glmnet.fit)[1], elnet = "gaussian", lognet = "binomial", fishnet = "poisson", 
+#         family = switch(class(object$fit$glmnet.fit)[1], elnet = "gaussian", lognet = "binomial", fishnet = "poisson",
 #             coxnet = "cox")
 #         coefs = object$fit$glmnet.fit$beta[, s]
 #         intercept = object$fit$glmnet.fit$a0[s]
@@ -133,35 +144,35 @@ predict.SIS <- function(object, newx, lambda = object$lambda, which = NULL, type
 #         coefs = object$fit$beta[-1, s]
 #         intercept = object$fit$beta[1, s]
 #     } else {
-#         family = switch(class(object$fit)[1], elnet = "gaussian", lognet = "binomial", fishnet = "poisson", 
+#         family = switch(class(object$fit)[1], elnet = "gaussian", lognet = "binomial", fishnet = "poisson",
 #             coxnet = "cox")
 #         coefs = object$fit$beta[, s]
 #         intercept = object$fit$a0[s]
 #     }
-#     
+#
 #     newx = newx[, object$ix]
-#     
-#     if (length(coefs) == 1 || length(newx) == 1) 
-#         eta = newx * coefs else if (length(coefs) == length(s)) 
+#
+#     if (length(coefs) == 1 || length(newx) == 1)
+#         eta = newx * coefs else if (length(coefs) == length(s))
 #         eta = newx %*% t(coefs) else eta = newx %*% coefs
-#     
-#     if (family != "cox") 
+#
+#     if (family != "cox")
 #         eta = t(intercept + t(eta))
-#     
-#     if (family == "gaussian") 
+#
+#     if (family == "gaussian")
 #         pihat = eta
-#     if (family == "binomial") 
+#     if (family == "binomial")
 #         pihat = exp(eta)/(1 + exp(eta))
-#     if (family %in% c("poisson", "cox")) 
+#     if (family %in% c("poisson", "cox"))
 #         pihat = exp(eta)
-#     
-#     if (match.arg(type) == "response") 
+#
+#     if (match.arg(type) == "response")
 #         return(pihat)
-#     if (match.arg(type) == "link") 
+#     if (match.arg(type) == "link")
 #         return(eta)
-#     if (match.arg(type) == "class" && family == "binomial") 
+#     if (match.arg(type) == "class" && family == "binomial")
 #         return(matrix(as.integer(eta > 0), ncol = length(s)))
-#     if (match.arg(type) == "class" && family == "poisson") 
+#     if (match.arg(type) == "class" && family == "poisson")
 #         stop("Choose response for Poisson, or choose binomial for response")
-#     
+#
 # }

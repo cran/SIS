@@ -1,15 +1,28 @@
 Package: SIS
-Version: 0.8-8
-Date: 2020-01-27
+Version: 1.5
+Date: 2026-03-13
 Title: Sure Independence Screening
 Authors@R: c(person("Yang", "Feng", email = "yangfengstat@gmail.com",
-  role = c("aut", "cre")),person("Jianqing", "Fan", email = "jqfan@princeton.edu",
-  role = c("aut")),person("Diego", "Franco Saldana", email = "diegofrasal@gmail.com",
-  role = c("aut")),person("Yichao", "Wu", email = "yichaowu@uic.edu",
-  role = c("aut")),person("Richard", "Samworth", email = "rjs57@hermes.cam.ac.uk",
+  role = c("aut", "cre")),
+  person("Jianqing", "Fan", 
+  email = "jqfan@princeton.edu",
+  role = c("aut")),
+  person("Diego", "Franco Saldana", 
+  email = "diegofrasal@gmail.com",
+  role = c("aut")),
+  person("Yichao", "Wu", 
+  email = "yichaowu@uic.edu",
+  role = c("aut")),
+  person("Richard", "Samworth", 
+  email = "rjs57@hermes.cam.ac.uk",
+  role = c("aut")),
+  person("Arce", "Domingo Relloso", 
+  email = "ad3531@cumc.columbia.edu",
   role = c("aut")))
 Depends: R (>= 3.2.4)
-Imports: glmnet, ncvreg, survival
+Imports: glmnet, ncvreg, survival, nnet, doParallel, gcdnet, msaenet,
+        foreach, methods
+LinkingTo: Rcpp, RcppEigen
 Description: Variable selection techniques are essential tools for model
     selection and estimation in high-dimensional statistical models. Through this
     publicly available package, we provide a unified environment to carry out
@@ -17,14 +30,19 @@ Description: Variable selection techniques are essential tools for model
     of its variants in generalized linear models (Fan and Song (2009)<doi:10.1214/10-AOS798>) and the Cox proportional hazards
     model (Fan, Feng and Wu (2010)<doi:10.1214/10-IMSCOLL606>).
 License: GPL-2
-RoxygenNote: 7.0.2
-NeedsCompilation: no
-Packaged: 2020-01-27 16:03:49 UTC; yangfeng
+RoxygenNote: 7.2.3
+Encoding: UTF-8
+Suggests: rmarkdown, knitr, formatR, pROC
+VignetteBuilder: knitr
+LazyData: true
+NeedsCompilation: yes
+Packaged: 2026-03-14 04:00:26 UTC; yangfeng
 Author: Yang Feng [aut, cre],
   Jianqing Fan [aut],
   Diego Franco Saldana [aut],
   Yichao Wu [aut],
-  Richard Samworth [aut]
+  Richard Samworth [aut],
+  Arce Domingo Relloso [aut]
 Maintainer: Yang Feng <yangfengstat@gmail.com>
 Repository: CRAN
-Date/Publication: 2020-01-27 17:10:07 UTC
+Date/Publication: 2026-03-14 06:10:36 UTC
